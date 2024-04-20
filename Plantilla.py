@@ -68,10 +68,7 @@ class Inscripciones:
         self.cmbx_Id_Alumno.place(anchor="nw", width=112, x=110, y=85)
         self.cmbx_Id_Alumno.bind('<<ComboboxSelected>>', self.infoAlum)
         
-        #Label Alumno
-        self.lblNombres = ttk.Label(self.frm_1, name="lblnombres")
-        self.lblNombres.configure(text='Nombre(s):')
-        self.lblNombres.place(anchor="nw", x=30, y=140)
+       
         
         #Entry Alumno
         self.nombres = ttk.Entry(self.frm_1, name="nombres",state="readonly")

@@ -68,7 +68,6 @@ class Inscripciones:
                                            textvariable=self.idAlumSelect)
         self.cmbx_Id_Alumno.place(anchor="nw", width=112, x=110, y=85)
         self.cmbx_Id_Alumno.bind("<<ComboboxSelected>>", self.info_Alum)
-        self.cmbx_Id_Alumno.bind("<KeyRelease>", self.serch_Id_Alum)
         
         #Label nombres
         self.lblNombres = ttk.Label(self.frm_1, name="lblnombres")
@@ -226,34 +225,42 @@ class Inscripciones:
         
         with sql.connect(self.db_name) as conn:
             cursor = conn.cursor()
-            result=cursor.execute(query)
+            cursor.execute(query)
             conn.commit()
-        return result.fetchall()
+        return cursor.fetchall()
 
     #Extraer datos de alumnos de la db de forma dinamica
-    def update_arrow_IdAlum(self):
+    def update_arrow_IdAlum(self, *args):
         
         """La función update_arrow_IdAlum se encarga de cargar los Id_Alumno
-            de la tabla de Alumnos de la base de datos al combobox con su mismo
-            nombre"""
-        
+            de la tabla de Alumnos al combobox con su mismo nombre"""
+            
         instrc = f"SELECT Id_Alumno FROM Alumnos ORDER BY Id_Alumno"
         self.cmbx_Id_Alumno['values']=self.run_query(instrc)
+        self.serch_Id_Alum()
+            
 
     #Cuando se escriba en el combobox de Id Alumnos buscar coincidencias
-    def serch_Id_Alum(self, event):
+    def serch_Id_Alum(self):
         
         """La función serch_Id_Alum busca coincidencias en la tablan de Alumnos
             con el Id_Alumno escrito por el usuario para reducir la cantidad
-            de registros mostrados en el combobox. En caso de no esncontrar una
+            de registros mostrados en el combobox. En caso de no encontrar una
             coincidencia mostrara un letrero de advertencia."""
             
-        instrc = f"SELECT Id_Alumno FROM Alumnos ORDER BY Id_Alumno WHERE Id_Almno like {self.idAlumSelect}"
+        print (self.idAlumSelect.get()) 
+        instrc = f"SELECT Id_Alumno FROM Alumnos WHERE Id_Alumno like '%{self.idAlumSelect.get()}%'"
         resultados=self.run_query(instrc)
-        self.cmbx_Id_Alumno['values']=resultados
-    
+        
         # Para saber si la busqueda no retorno nada
-        if resultados=="":
+        if resultados:
+   
+            if (self.idAlumSelect.get()!=resultados[0][0] or len(resultados)!=1) and len(resultados)!=0:
+            
+                self.cmbx_Id_Alumno['values']=resultados
+                
+        else:
+
             msg.showerror(title="¡Atención!",
                          message="¡Id de Alumno no valido!"
                    )

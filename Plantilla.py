@@ -9,8 +9,9 @@ from datetime import datetime
 class Inscripciones:
     
     def __init__(self, master=None):
-        # Ventan principal    
-        
+        # Ventan principal 
+           
+        self.db_name = "db/Inscripciones.db" #establecer la ruta de la db
         self.win = tk.Tk(master)
         self.win.configure(background="#f7f9fd") #fondo ventana
         wwin, hwin = 800, 600 #Tamaño de la ventana
@@ -57,31 +58,65 @@ class Inscripciones:
         #Label ID Alumno
         self.lblIdAlumno = ttk.Label(self.frm_1, name="lblidalumno")
         self.lblIdAlumno.configure(background="#f7f9fd", text='Id Alumno:')
-        self.lblIdAlumno.place(anchor="nw", x=30, y=85)
+        self.lblIdAlumno.place(anchor="nw", x=20, y=85)
         
         #Combobox Alumno
         self.idAlumSelect=tk.StringVar()
-        self.cmbx_Id_Alumno = ttk.Combobox(self.frm_1,state="readonly", 
+        self.cmbx_Id_Alumno = ttk.Combobox(self.frm_1,
                                            name="cmbx_id_alumno", 
                                            postcommand=self.update_arrow_IdAlum , 
                                            textvariable=self.idAlumSelect)
         self.cmbx_Id_Alumno.place(anchor="nw", width=112, x=110, y=85)
-        self.cmbx_Id_Alumno.bind('<<ComboboxSelected>>', self.infoAlum)
+        self.cmbx_Id_Alumno.bind("<<ComboboxSelected>>", self.info_Alum)
+        self.cmbx_Id_Alumno.bind("<KeyRelease>", self.serch_Id_Alum)
         
-       
+        #Label nombres
+        self.lblNombres = ttk.Label(self.frm_1, name="lblnombres")
+        self.lblNombres.configure(text='Nombre(s):')
+        self.lblNombres.place(anchor="nw", x=20, y=130)
         
         #Entry Alumno
         self.nombres = ttk.Entry(self.frm_1, name="nombres",state="readonly")
-        self.nombres.place(anchor="nw", width=200, x=110, y=140)
+        self.nombres.place(anchor="nw", width=200, x=110, y=130)
         
         #Label Apellidos
         self.lblApellidos = ttk.Label(self.frm_1, name="lblapellidos")
         self.lblApellidos.configure(text='Apellido(s):')
-        self.lblApellidos.place(anchor="nw", x=400, y=140)
+        self.lblApellidos.place(anchor="nw", x=400, y=130)
         
         #Entry Apellidos
         self.apellidos = ttk.Entry(self.frm_1, name="apellidos",state="readonly")
-        self.apellidos.place(anchor="nw", width=200, x=485, y=140)
+        self.apellidos.place(anchor="nw", width=200, x=485, y=130)
+        
+        #Label Curso
+        self.lblIdCurso = ttk.Label(self.frm_1, name="lblidcurso")
+        self.lblIdCurso.configure(background="#f7f9fd",state="normal",text='Id Curso:')
+        self.lblIdCurso.place(anchor="nw", x=20, y=180)
+        
+        #Entry Curso
+        self.id_Curso = ttk.Entry(self.frm_1, name="id_curso")
+        self.id_Curso.configure(justify="left", width=166)
+        self.id_Curso.place(anchor="nw", width=166, x=100, y=180)
+        
+        #Label Descripción del Curso
+        self.lblDscCurso = ttk.Label(self.frm_1, name="lbldsccurso")
+        self.lblDscCurso.configure(background="#f7f9fd",state="normal",text='Curso:')
+        self.lblDscCurso.place(anchor="nw", x=275, y=180)
+        
+        #Entry de Descripción del Curso 
+        self.descripc_Curso = ttk.Entry(self.frm_1, name="descripc_curso")
+        self.descripc_Curso.configure(justify="left", width=166)
+        self.descripc_Curso.place(anchor="nw", width=300, x=325, y=180)
+        
+        #Label Horario
+        self.lblHorario = ttk.Label(self.frm_1, name="label3")
+        self.lblHorario.configure(background="#f7f9fd",state="normal",text='Hora:')
+        self.lblHorario.place(anchor="nw", x=635, y=180)
+        
+        #Entry del Horario
+        self.horario = ttk.Entry(self.frm_1, name="entry3")
+        self.horario.configure(justify="left", width=166)
+        self.horario.place(anchor="nw", width=100, x=680, y=180)
 
         ''' Botones  de la Aplicación'''
         
@@ -151,6 +186,12 @@ class Inscripciones:
     #validación tamaño fecha
     def validacion_size_fecha(self, event):
         
+        """La función validacion_size_fecha valida el tamaño de la información
+            suministrada en el campo de fecha no sea mayor a 10 caracteres, 
+            suprimiendo los caracteres exedentes, ademas de poner automaticamente
+            las divisiones de dias, meses y años correspondientes al formato
+            de la fecha trabajado"""
+        
         #insertar "/"" automatico para separar dias, mese y años
         if len(self.fecha.get())==2 or len(self.fecha.get())==5:
             self.fecha.insert(tk.END,"/")
@@ -165,47 +206,83 @@ class Inscripciones:
     #Verificar si la fecha digitada es valida
     def val_fecha(self):
         
+        """La función val_fecha valida si la información suministrada en el campo
+            de fecha corresponde a una fecha valida o existente"""
+        
         if len(self.fecha.get())<=10:
             try:
              # Intentar convertirla a una fecha.
                 fechav = datetime.strptime(self.fecha.get(), "%d/%m/%Y")
             except:
                 msg.showerror(title="¡Atención!",
-                         message="Fecha no valida"
+                         message="¡Fecha no valida!"
                    )
     
+    # Función para ejecutar las instrucciones (query)
+    def run_query(self, query):
+        
+        """La función run_query recibe un query (instruccióna ejecutar sobre la base
+            de datos) y retorna una tupla con el resultado de la instrucción."""
+        
+        with sql.connect(self.db_name) as conn:
+            cursor = conn.cursor()
+            result=cursor.execute(query)
+            conn.commit()
+        return result.fetchall()
+
     #Extraer datos de alumnos de la db de forma dinamica
-    def update_arrow_IdAlum(self, *args):
+    def update_arrow_IdAlum(self):
         
-        conn = sql.connect("db/Inscripciones.db")
-        cursor = conn.cursor()
+        """La función update_arrow_IdAlum se encarga de cargar los Id_Alumno
+            de la tabla de Alumnos de la base de datos al combobox con su mismo
+            nombre"""
+        
         instrc = f"SELECT Id_Alumno FROM Alumnos ORDER BY Id_Alumno"
-        cursor.execute(instrc)
-        datos =cursor.fetchall()
-        self.cmbx_Id_Alumno['values']=datos
-        conn.close()
-                
-    def infoAlum(self,event):
+        self.cmbx_Id_Alumno['values']=self.run_query(instrc)
+
+    #Cuando se escriba en el combobox de Id Alumnos buscar coincidencias
+    def serch_Id_Alum(self, event):
         
+        """La función serch_Id_Alum busca coincidencias en la tablan de Alumnos
+            con el Id_Alumno escrito por el usuario para reducir la cantidad
+            de registros mostrados en el combobox. En caso de no esncontrar una
+            coincidencia mostrara un letrero de advertencia."""
+            
+        instrc = f"SELECT Id_Alumno FROM Alumnos ORDER BY Id_Alumno WHERE Id_Almno like {self.idAlumSelect}"
+        resultados=self.run_query(instrc)
+        self.cmbx_Id_Alumno['values']=resultados
+    
+        # Para saber si la busqueda no retorno nada
+        if resultados=="":
+            msg.showerror(title="¡Atención!",
+                         message="¡Id de Alumno no valido!"
+                   )
+            self.cmbx_Id_Alumno.delete(0,tk.END)
+    
+    #Cuando se seleccione el codigo, se llene los campos de nombres y apellidos
+    def info_Alum(self,event):
+        
+        """La función info_Alum muestra en los campos de nombres y apellidos 
+            los datos correspondientes a el id seleccionado en el combobox
+            de Id_Alumnos"""
+            
         #Hacer modificables los entry
         self.apellidos.config(state="normal") 
         self.nombres.config(state="normal")
         #eliminar si hay residuos en los campos
         self.nombres.delete(0,tk.END)
         self.apellidos.delete(0,tk.END) 
-        conn = sql.connect("db/Inscripciones.db")
-        cursor = conn.cursor()
-        instrc = f"SELECT Nombres, Apellidos FROM Alumnos WHERE Id_Alumno='{self.idAlumSelect.get()}'"
-        cursor.execute(instrc)
-        datos =cursor.fetchall() # se retorna una tupla de listas
-        conn.commit()
-        conn.close()
+    
+        datos = self.run_query(f"SELECT Nombres, Apellidos FROM Alumnos WHERE Id_Alumno='{self.idAlumSelect.get()}'")
+       
         #Insertar en los entrys nombres y apellidos
         self.nombres.insert(0,datos[0][0])
         self.apellidos.insert(0,datos[0][1])
+        
         #Volver a dejar el entry como "solo lectura"
         self.apellidos.config(state="readonly")
         self.nombres.config(state="readonly")
+    
     
 if __name__ == "__main__":
     app = Inscripciones()

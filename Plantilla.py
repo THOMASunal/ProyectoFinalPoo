@@ -136,7 +136,7 @@ class Inscripciones:
         
         #Botón Cancelar
         self.btnCancelar = ttk.Button(self.frm_1, name="btncancelar")
-        self.btnCancelar.configure(text='Cancelar')
+        self.btnCancelar.configure(text='Cancelar',command=self.manejar_boton_cancelar)
         self.btnCancelar.place(anchor="nw", x=500, y=220)
         
         #Separador
@@ -161,7 +161,7 @@ class Inscripciones:
         self.tView.heading("#0", anchor="w", text='Curso')
         self.tView.heading("tV_descripción", anchor="w", text='Descripción')
         self.tView.place(anchor="nw", height=300, width=790, x=4, y=280)
-        
+
         #Scrollbars
         self.scroll_H = ttk.Scrollbar(self.tView,name="scroll_h")
         self.scroll_H.configure(orient="horizontal")
@@ -177,8 +177,36 @@ class Inscripciones:
 
     def run(self):
         self.mainwindow.mainloop()
-        
 
+    def manejar_boton_cancelar(self):
+        # limpiar el campo de No.Inscripción
+        self.num_Inscripcion.delete(0,tk.END)
+
+        #limpiar el campo de fecha
+        self.fecha.delete(0,tk.END)
+
+        # limpiar el campo de cmbx_Id_Alumno
+        self.cmbx_Id_Alumno.delete(0,tk.END)
+
+        # limpiar los campos de nombres y apellidos
+        self.nombres.config(state="normal")
+        self.apellidos.config(state="normal")
+
+        self.nombres.delete(0,tk.END)
+        self.apellidos.delete(0,tk.END)
+
+        self.nombres.config(state="readonly")
+        self.apellidos.config(state="readonly")
+
+        # limpiar los campos de Id Curso, Curso y Hora
+        self.id_Curso.delete(0,tk.END)
+        self.descripc_Curso.delete(0,tk.END)
+        self.horario.delete(0,tk.END)
+
+        # limpiar el tree view
+        self.tView.delete(*self.tView.get_children())
+
+        
     ''' A partir de este punto se deben incluir las funciones
      para el manejo de la base de datos '''
      

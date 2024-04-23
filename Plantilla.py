@@ -239,7 +239,6 @@ class Inscripciones:
         self.cmbx_Id_Alumno['values']=self.run_query(instrc)
         self.serch_Id_Alum()
             
-
     #Cuando se escriba en el combobox de Id Alumnos buscar coincidencias
     def serch_Id_Alum(self):
         
@@ -248,7 +247,6 @@ class Inscripciones:
             de registros mostrados en el combobox. En caso de no encontrar una
             coincidencia mostrara un letrero de advertencia."""
             
-        print (self.idAlumSelect.get()) 
         instrc = f"SELECT Id_Alumno FROM Alumnos WHERE Id_Alumno like '%{self.idAlumSelect.get()}%'"
         resultados=self.run_query(instrc)
         

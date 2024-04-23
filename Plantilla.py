@@ -109,18 +109,14 @@ class Inscripciones:
         self.descripc_Curso = ttk.Entry(self.frm_1, name="descripc_curso")
         self.descripc_Curso.configure(justify="left", width=166)
         self.descripc_Curso.place(anchor="nw", width=300, x=325, y=180)
-        
-        #Label Horario
-        self.lblHorario = ttk.Label(self.frm_1, name="label3")
-        self.lblHorario.configure(background="#f7f9fd",state="normal",text='Hora:')
-        self.lblHorario.place(anchor="nw", x=635, y=180)
-        
-        #Entry del Horario
-        self.horario = ttk.Entry(self.frm_1, name="entry3")
-        self.horario.configure(justify="left", width=166)
-        self.horario.place(anchor="nw", width=100, x=680, y=180)
+
 
         ''' Botones  de la Aplicación'''
+        
+        #Boton Consultar
+        self.btnConsultar=ttk.Button(self.frm_1, name="btnconsultar")
+        self.btnConsultar.configure(text="Consultar",command=self.cargar_tV)
+        self.btnConsultar.place(anchor="nw", width=100, x=680, y=180)
         
         #Botón Guardar
         self.btnGuardar = ttk.Button(self.frm_1, name="btnguardar")
@@ -320,7 +316,6 @@ class Inscripciones:
 
         self.nombres.delete(0,tk.END)
         self.apellidos.delete(0,tk.END)
-
         
         # si se pasan argumentos, ponerlos en los entrys respectivos
         if nombre and apellido:
@@ -355,16 +350,17 @@ class Inscripciones:
     
     def tV_order(self,event):
         
-        """La función tv_order identifica en que heading se ha seleccionado
+        """La función tv_order identifica que heading se ha seleccionado
             para poder organizar los datos por medio de ese parametro"""
+        if self.apellidos.get()!="" or self.nombres.get()!="":
             
-        colum_id = self.tView.identify_column(event.x)
-        if colum_id=="#0":
-            self.cargar_tV()
-        elif colum_id=="#1":
-            self.cargar_tV("Descripción")
-        elif colum_id=="#2":
-            self.cargar_tV("Num_Horas")
+            colum_id = self.tView.identify_column(event.x)
+            if colum_id=="#0":
+                self.cargar_tV()
+            elif colum_id=="#1":
+                self.cargar_tV("Descripción")
+            elif colum_id=="#2":
+                self.cargar_tV("Num_Horas")
             
     
 if __name__ == "__main__":

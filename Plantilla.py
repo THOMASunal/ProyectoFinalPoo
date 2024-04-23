@@ -330,17 +330,17 @@ class Inscripciones:
     
 
     # Obteniendo los valores ingresados por el usuario
-     filtro_id_curso = self.id_Curso.get().strip()
-     filtro_descripcion_curso = self.descripc_Curso.get().strip()
+     entry_id_curso = self.id_Curso.get().strip()
+     entry_descripcion_curso = self.descripc_Curso.get().strip()
 
     # Construyendo la consulta SQL con los filtros necesarios
      query = "SELECT * FROM Cursos"
      conditions = []
     
-     if filtro_id_curso:
-        conditions.append(f"Código_Curso LIKE '%{filtro_id_curso}%'")
-     if filtro_descripcion_curso:
-        conditions.append(f"Descripción LIKE '%{filtro_descripcion_curso}%'")
+     if entry_id_curso:
+        conditions.append(f"Código_Curso LIKE '%{entry_id_curso}%'")
+     if entry_descripcion_curso:
+        conditions.append(f"Descripción LIKE '%{entry_descripcion_curso}%'")
     
      if conditions:
         query += " WHERE " + " AND ".join(conditions)

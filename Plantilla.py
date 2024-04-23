@@ -110,17 +110,12 @@ class Inscripciones:
         self.descripc_Curso.configure(justify="left", width=166)
         self.descripc_Curso.place(anchor="nw", width=300, x=325, y=180)
         
-        #Label Horario
-        self.lblHorario = ttk.Label(self.frm_1, name="label3")
-        self.lblHorario.configure(background="#f7f9fd",state="normal",text='Hora:')
-        self.lblHorario.place(anchor="nw", x=635, y=180)
         
-        #Entry del Horario
-        self.horario = ttk.Entry(self.frm_1, name="entry3")
-        self.horario.configure(justify="left", width=166)
-        self.horario.place(anchor="nw", width=100, x=680, y=180)
-
         ''' Botones  de la Aplicación'''
+        #Boton Consultar
+        self.btnConsultar=ttk.Button(self.frm_1, name="btnconsultar")
+        self.btnConsultar.configure(text="Consultar",command=self.cargar_tV)
+        self.btnConsultar.place(anchor="nw", width=100, x=680, y=180)
         
         #Botón Guardar
         self.btnGuardar = ttk.Button(self.frm_1, name="btnguardar")
@@ -284,12 +279,14 @@ class Inscripciones:
        
         #Insertar en los entrys nombres y apellidos
         self.mod_name_lastn(datos[0][0],datos[0][1])
-        self.cargar_tV()
+       
     
     def cancelar_botton(self):
         
         """La función cancelar_botton limpia todos los campos de la venta para
             poder ingresar nueva información"""
+        # limpiar el tree view
+        self.tView.delete(*self.tView.get_children())
             
         # limpiar el campo de No.Inscripción
         self.num_Inscripcion.delete(0,tk.END)
@@ -309,8 +306,7 @@ class Inscripciones:
         self.descripc_Curso.delete(0,tk.END)
         self.horario.delete(0,tk.END)
 
-        # limpiar el tree view
-        self.tView.delete(*self.tView.get_children())
+        
     
     def mod_name_lastn(self,nombre=None,apellido=None,*args):
         
@@ -330,29 +326,39 @@ class Inscripciones:
         self.nombres.config(state="readonly")
         self.apellidos.config(state="readonly")
     
-    def cargar_tV(self,orden="Código_Curso"):
-        
-        """La función cargar_tV sirve para cargar en el treeView los datos de los 
-            cursos encontrados en la base de datos"""
-
-        self.tView.delete(*self.tView.get_children())
-        cursos=self.run_query(f"SELECT * FROM Cursos ORDER BY {orden}")
-        
-        #ingresar cada registro en el tV
-        for curso in cursos:
-            estado="No Inscrito"    
-            datos=self.run_query(f"SELECT Código_Curso FROM Inscritos WHERE Id_Alumno='{self.idAlumSelect.get()}'")
-            
-            #  Para saber el estado del curso con respecto al estudiante, se debe de conocer 
-            #  si el curso ya se encuentra en la tabla de inscritos asociado a el Id del alumno
-            if len(datos)!=0:
-                
-                if curso[0] in datos:
-                    estado="Inscrito"
-                    
-            #agregar info al treeview
-            self.tView.insert("","end",text=curso[0],values=(curso[1],curso[2],estado))
+    def cargar_tV(self, orden="Código_Curso"):
     
+
+    # Obteniendo los valores ingresados por el usuario
+     filtro_id_curso = self.id_Curso.get().strip()
+     filtro_descripcion_curso = self.descripc_Curso.get().strip()
+
+    # Construyendo la consulta SQL con los filtros necesarios
+     query = "SELECT * FROM Cursos"
+     conditions = []
+    
+     if filtro_id_curso:
+        conditions.append(f"Código_Curso LIKE '%{filtro_id_curso}%'")
+     if filtro_descripcion_curso:
+        conditions.append(f"Descripción LIKE '%{filtro_descripcion_curso}%'")
+    
+     if conditions:
+        query += " WHERE " + " AND ".join(conditions)
+    
+     query += f" ORDER BY {orden}"
+
+    # Ejecutando la consulta y actualizando el TreeView
+     cursos = self.run_query(query)
+     self.tView.delete(*self.tView.get_children())
+     for curso in cursos:
+        estado = "No Inscrito"
+        datos = self.run_query(f"SELECT Código_Curso FROM Inscritos WHERE Id_Alumno='{self.idAlumSelect.get()}'")
+        if datos and curso[0] in [d[0] for d in datos]:
+            estado = "Inscrito"
+        self.tView.insert("", "end", text=curso[0], values=(curso[1], curso[2], estado))
+
+
+
     def tV_order(self,event):
         
         """La función tv_order identifica en que heading se ha seleccionado

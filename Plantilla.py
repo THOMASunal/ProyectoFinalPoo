@@ -67,9 +67,10 @@ class Inscripciones:
                                            postcommand=self.update_arrow_IdAlum , 
                                            textvariable=self.idAlumSelect)
         self.cmbx_Id_Alumno.place(anchor="nw", width=112, x=110, y=85)
+        # Actualizar la info cuando se selecciona una opción de la lista desplegable
         self.cmbx_Id_Alumno.bind("<<ComboboxSelected>>", self.info_Alum)
-        #self.cmbx_Id_Alumno.bind("<KeyRelease>",self.mod_name_lastn)
-        self.cmbx_Id_Alumno.bind("<KeyRelease>",lambda event:(self.mod_name_lastn(),self.tView.delete(*self.tView.get_children())) )
+        #cada que se oprima alguna tecla en el campo de id Alumno, limpiar los campos que se llenan automaticamente
+        self.cmbx_Id_Alumno.bind("<KeyRelease>",lambda event:(self.mod_name_lastn(),self.tView.delete(*self.tView.get_children()),self.id_Curso.delete(0,tk.END),self.descripc_Curso.delete(0,tk.END)) )
         
         
         #Label nombres
@@ -115,7 +116,8 @@ class Inscripciones:
         
         #Boton Consultar
         self.btnConsultar=ttk.Button(self.frm_1, name="btnconsultar")
-        self.btnConsultar.configure(text="Consultar",command=self.cargar_tV)
+        # al presionar el boton, se debe confirmar que se halla ingresado un alumno para desplegar los cursos
+        self.btnConsultar.configure(text="Consultar",command=lambda: self.cargar_tV() if self.apellidos.get()!="" or self.nombres.get()!="" else msg.showerror(title="¡Atención!",message="-Ingrese un Alumno-"))
         self.btnConsultar.place(anchor="nw", width=100, x=680, y=180)
         
         #Botón Guardar
@@ -201,9 +203,7 @@ class Inscripciones:
             
         #Verificación de maximo de caracteres permitidos en fecha
         elif len(self.fecha.get())>10:
-            msg.showerror(title="¡Atención!",
-                         message="-Maximo 10 caracteres-"
-                   )
+            msg.showerror(title="¡Atención!",message="-Maximo 10 caracteres-")
             self.fecha.delete(10, tk.END) #borrar caracteres demas
             
     #Verificar si la fecha digitada es valida
@@ -250,8 +250,7 @@ class Inscripciones:
             con el Id_Alumno escrito por el usuario para reducir la cantidad
             de registros mostrados en el combobox. En caso de no encontrar una
             coincidencia mostrara un letrero de advertencia."""
-            
-        self.tView.delete(*self.tView.get_children())
+        
         instrc = f"SELECT Id_Alumno FROM Alumnos WHERE Id_Alumno like '%{self.idAlumSelect.get()}%'"
         resultados=self.run_query(instrc)
         
@@ -264,9 +263,7 @@ class Inscripciones:
                 
         else:
 
-            msg.showerror(title="¡Atención!",
-                         message="¡Id de Alumno no valido!"
-                   )
+            msg.showerror(title="¡Atención!",message="¡Id de Alumno no valido!")
             self.cmbx_Id_Alumno.delete(0,tk.END)
     
     #Cuando se seleccione el codigo, se llene los campos de nombres y apellidos
@@ -280,6 +277,8 @@ class Inscripciones:
        
         #Insertar en los entrys nombres y apellidos
         self.mod_name_lastn(datos[0][0],datos[0][1])
+        self.id_Curso.delete(0,tk.END)
+        self.descripc_Curso.delete(0,tk.END)
         self.cargar_tV()
     
     def cancelar_botton(self):
@@ -303,7 +302,6 @@ class Inscripciones:
         # limpiar los campos de Id Curso, Curso y Hora
         self.id_Curso.delete(0,tk.END)
         self.descripc_Curso.delete(0,tk.END)
-        self.horario.delete(0,tk.END)
 
         # limpiar el tree view
         self.tView.delete(*self.tView.get_children())
@@ -331,7 +329,15 @@ class Inscripciones:
             cursos encontrados en la base de datos"""
 
         self.tView.delete(*self.tView.get_children())
-        cursos=self.run_query(f"SELECT * FROM Cursos ORDER BY {orden}")
+        query="SELECT * FROM Cursos"
+        
+        if self.id_Curso.get()!="":
+            query +=f" WHERE Código_Curso like '%{self.id_Curso.get()}%'"
+        elif self.descripc_Curso.get()!="":
+            query +=f" WHERE Descripción like '%{self.descripc_Curso.get()}%'"   
+            
+        query += f" ORDER BY {orden}"
+        cursos=self.run_query(query)
         
         #ingresar cada registro en el tV
         for curso in cursos:
@@ -361,7 +367,7 @@ class Inscripciones:
                 self.cargar_tV("Descripción")
             elif colum_id=="#2":
                 self.cargar_tV("Num_Horas")
-            
+
     
 if __name__ == "__main__":
     app = Inscripciones()

@@ -68,6 +68,9 @@ class Inscripciones:
                                            textvariable=self.idAlumSelect)
         self.cmbx_Id_Alumno.place(anchor="nw", width=112, x=110, y=85)
         self.cmbx_Id_Alumno.bind("<<ComboboxSelected>>", self.info_Alum)
+        #self.cmbx_Id_Alumno.bind("<KeyRelease>",self.mod_name_lastn)
+        self.cmbx_Id_Alumno.bind("<KeyRelease>",lambda event:(self.mod_name_lastn(),self.tView.delete(*self.tView.get_children())) )
+        
         
         #Label nombres
         self.lblNombres = ttk.Label(self.frm_1, name="lblnombres")
@@ -131,12 +134,12 @@ class Inscripciones:
         
         #Botón Eliminar
         self.btnEliminar = ttk.Button(self.frm_1, name="btneliminar")
-        self.btnEliminar.configure(text='Eliminar')
+        self.btnEliminar.configure(text='Eliminar', )
         self.btnEliminar.place(anchor="nw", x=400, y=220)
         
         #Botón Cancelar
         self.btnCancelar = ttk.Button(self.frm_1, name="btncancelar")
-        self.btnCancelar.configure(text='Cancelar')
+        self.btnCancelar.configure(text='Cancelar', command=self.cancelar_botton)
         self.btnCancelar.place(anchor="nw", x=500, y=220)
         
         #Separador
@@ -151,16 +154,21 @@ class Inscripciones:
         self.tView.configure(selectmode="extended")
         
         #Columnas del Treeview
-        self.tView_cols = ['tV_descripción']
-        self.tView_dcols = ['tV_descripción']
+        self.tView_cols = ['tV_descripción','horas','estado']
+        self.tView_dcols = ['tV_descripción','horas','estado']
         self.tView.configure(columns=self.tView_cols,displaycolumns=self.tView_dcols)
         self.tView.column("#0",anchor="w",stretch=True,width=10,minwidth=10)
         self.tView.column("tV_descripción",anchor="w",stretch=True,width=200,minwidth=50)
+        self.tView.column("horas",anchor="w",stretch=True,width=10,minwidth=10)
+        self.tView.column("estado",anchor="w",stretch=True,width=30,minwidth=20)
         
         #Cabeceras
-        self.tView.heading("#0", anchor="w", text='Curso')
-        self.tView.heading("tV_descripción", anchor="w", text='Descripción')
+        self.tView.heading("#0", anchor="w", text='ID Curso')
+        self.tView.heading("tV_descripción", anchor="w", text='Nombre del Curso')
+        self.tView.heading("horas", anchor="w", text='Horas ')
+        self.tView.heading("estado", anchor="w", text='Estado de Inscripción')
         self.tView.place(anchor="nw", height=300, width=790, x=4, y=280)
+        self.tView.bind("<Button-1>",self.tV_order)
         
         #Scrollbars
         self.scroll_H = ttk.Scrollbar(self.tView,name="scroll_h")
@@ -247,6 +255,7 @@ class Inscripciones:
             de registros mostrados en el combobox. En caso de no encontrar una
             coincidencia mostrara un letrero de advertencia."""
             
+        self.tView.delete(*self.tView.get_children())
         instrc = f"SELECT Id_Alumno FROM Alumnos WHERE Id_Alumno like '%{self.idAlumSelect.get()}%'"
         resultados=self.run_query(instrc)
         
@@ -270,24 +279,93 @@ class Inscripciones:
         """La función info_Alum muestra en los campos de nombres y apellidos 
             los datos correspondientes a el id seleccionado en el combobox
             de Id_Alumnos"""
-            
-        #Hacer modificables los entry
-        self.apellidos.config(state="normal") 
-        self.nombres.config(state="normal")
-        #eliminar si hay residuos en los campos
-        self.nombres.delete(0,tk.END)
-        self.apellidos.delete(0,tk.END) 
     
-        datos = self.run_query(f"SELECT Nombres, Apellidos FROM Alumnos WHERE Id_Alumno='{self.idAlumSelect.get()}'")
+        datos = self.run_query(f"SELECT Nombres, Apellidos FROM Alumnos WHERE Id_Alumno='{self.idAlumSelect.get()}' ORDER BY Id_Alumno")
        
         #Insertar en los entrys nombres y apellidos
-        self.nombres.insert(0,datos[0][0])
-        self.apellidos.insert(0,datos[0][1])
-        
-        #Volver a dejar el entry como "solo lectura"
-        self.apellidos.config(state="readonly")
-        self.nombres.config(state="readonly")
+        self.mod_name_lastn(datos[0][0],datos[0][1])
+        self.cargar_tV()
     
+    def cancelar_botton(self):
+        
+        """La función cancelar_botton limpia todos los campos de la venta para
+            poder ingresar nueva información"""
+            
+        # limpiar el campo de No.Inscripción
+        self.num_Inscripcion.delete(0,tk.END)
+
+        #limpiar el campo de fecha
+        self.fecha.delete(0,tk.END)
+        self.fecha.insert(0, "dd/mm/aaaa")
+        
+        # limpiar el campo de cmbx_Id_Alumno
+        self.cmbx_Id_Alumno.delete(0,tk.END)
+
+        # limpiar los campos de nombres y apellidos
+        self.mod_name_lastn()
+
+        # limpiar los campos de Id Curso, Curso y Hora
+        self.id_Curso.delete(0,tk.END)
+        self.descripc_Curso.delete(0,tk.END)
+        self.horario.delete(0,tk.END)
+
+        # limpiar el tree view
+        self.tView.delete(*self.tView.get_children())
+    
+    def mod_name_lastn(self,nombre=None,apellido=None,*args):
+        
+        # limpiar los campos de nombres y apellidos
+        self.nombres.config(state="normal")
+        self.apellidos.config(state="normal")
+
+        self.nombres.delete(0,tk.END)
+        self.apellidos.delete(0,tk.END)
+
+        
+        # si se pasan argumentos, ponerlos en los entrys respectivos
+        if nombre and apellido:
+            self.nombres.insert(0,nombre)
+            self.apellidos.insert(0,apellido)
+        
+        self.nombres.config(state="readonly")
+        self.apellidos.config(state="readonly")
+    
+    def cargar_tV(self,orden="Código_Curso"):
+        
+        """La función cargar_tV sirve para cargar en el treeView los datos de los 
+            cursos encontrados en la base de datos"""
+
+        self.tView.delete(*self.tView.get_children())
+        cursos=self.run_query(f"SELECT * FROM Cursos ORDER BY {orden}")
+        
+        #ingresar cada registro en el tV
+        for curso in cursos:
+            estado="No Inscrito"    
+            datos=self.run_query(f"SELECT Código_Curso FROM Inscritos WHERE Id_Alumno='{self.idAlumSelect.get()}'")
+            
+            #  Para saber el estado del curso con respecto al estudiante, se debe de conocer 
+            #  si el curso ya se encuentra en la tabla de inscritos asociado a el Id del alumno
+            if len(datos)!=0:
+                
+                if curso[0] in datos:
+                    estado="Inscrito"
+                    
+            #agregar info al treeview
+            self.tView.insert("","end",text=curso[0],values=(curso[1],curso[2],estado))
+    
+    def tV_order(self,event):
+        
+        """La función tv_order identifica en que heading se ha seleccionado
+            para poder organizar los datos por medio de ese parametro"""
+            
+        colum_id = self.tView.identify_column(event.x)
+        if colum_id=="#0":
+            self.cargar_tV()
+        elif colum_id=="#1":
+            self.cargar_tV("Descripción")
+        elif colum_id=="#2":
+            self.cargar_tV("Num_Horas")
+            
     
 if __name__ == "__main__":
     app = Inscripciones()

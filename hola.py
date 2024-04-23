@@ -4,8 +4,9 @@ from tkinter import ttk
 def cabecera_seleccionada(event):
     # Identificar la columna seleccionada
     columna_id = tree.identify_column(event.x)
+    fila_id= tree.identify_region(y=event.y,x=event.x)
     # Obtener el texto del encabezado de la columna
-    print("Cabecera seleccionada:", columna_id)
+    print("Cabecera seleccionada:", columna_id, fila_id,type(fila_id))
 
 # Crear la ventana principal
 root = tk.Tk()

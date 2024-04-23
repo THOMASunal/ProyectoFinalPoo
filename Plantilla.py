@@ -361,11 +361,13 @@ class Inscripciones:
         if self.apellidos.get()!="" or self.nombres.get()!="":
             
             colum_id = self.tView.identify_column(event.x)
-            if colum_id=="#0":
+            position_y = self.tView.identify_region(y=event.y,x=event.x)
+
+            if colum_id=="#0" and position_y=="heading":
                 self.cargar_tV()
-            elif colum_id=="#1":
+            elif colum_id=="#1" and position_y=="heading":
                 self.cargar_tV("Descripción")
-            elif colum_id=="#2":
+            elif colum_id=="#2" and position_y=="heading":
                 self.cargar_tV("Num_Horas")
 
     

@@ -126,7 +126,7 @@ class Inscripciones:
         
         #Botón Guardar
         self.btnGuardar = ttk.Button(self.frm_1, name="btnguardar")
-        self.btnGuardar.configure(text='Guardar')
+        self.btnGuardar.configure(text='Guardar', command=self.guardar_botton)
         self.btnGuardar.place(anchor="nw", x=200, y=220)
         
         #Botón Editar
@@ -286,6 +286,31 @@ class Inscripciones:
         self.descripc_Curso.delete(0,tk.END)
         self.cargar_tV()
     
+    def guardar_botton(self):
+        # obtener la fila seleccionada del tree view
+        current_item_id = self.tView.focus()
+        current_item = self.tView.item(current_item_id)
+        if current_item["text"] == "":
+            msg.showerror("Error", "Porfavor seleccione una fila")
+            return
+        if current_item["values"][2].lower() == "inscrito":
+            msg.showerror("Error", "El estudiante ya esta inscrito en el curso")
+            return
+
+        id_alumno = self.cmbx_Id_Alumno.get()
+        fecha_inscripcion = datetime.now().date()
+        codigo_curso = current_item["text"]
+        
+        # añadir la inscripcion a la base de datos
+        self.run_query(f"INSERT INTO Inscritos (Id_Alumno,Fecha_Inscripción,Código_Curso) VALUES ('{id_alumno}','{fecha_inscripcion}','{codigo_curso}')")
+
+        # actualizar el estado de inscripción (visualmente)
+        current_item["values"][2] = "Inscrito"
+        self.tView.item(item=current_item_id, values=current_item["values"])
+
+        msg.showinfo("Info", "Alumno inscrito exitosamente")
+
+
     def cancelar_botton(self):
         
         """La función cancelar_botton limpia todos los campos de la venta para
@@ -348,13 +373,13 @@ class Inscripciones:
         for curso in cursos:
             estado="No Inscrito"    
             datos=self.run_query(f"SELECT Código_Curso FROM Inscritos WHERE Id_Alumno='{self.idAlumSelect.get()}'")
-            
+
             #  Para saber el estado del curso con respecto al estudiante, se debe de conocer 
             #  si el curso ya se encuentra en la tabla de inscritos asociado a el Id del alumno
             if len(datos)!=0:
-                
-                if curso[0] in datos:
-                    estado="Inscrito"
+                for dato in datos: 
+                    if curso[0] == dato[0]: 
+                        estado="Inscrito"
                     
             #agregar info al treeview
             self.tView.insert("","end",text=curso[0],values=(curso[1],curso[2],estado))

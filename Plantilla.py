@@ -5,13 +5,15 @@ from tkinter import messagebox as msg
 import tkinter.ttk as ttk
 import sqlite3 as sql
 from datetime import datetime
+from os import path
 
 class Inscripciones:
     
     def __init__(self, master=None):
         # Ventan principal 
+        ruta_proyecto = __file__.replace("/" + path.basename(__file__), "")
            
-        self.db_name = "db/Inscripciones.db" #establecer la ruta de la db
+        self.db_name =  f"{ruta_proyecto}/db/Inscripciones.db" #establecer la ruta de la db
         self.win = tk.Tk(master)
         self.win.configure(background="#f7f9fd") #fondo ventana
         wwin, hwin = 800, 600 #Tamaño de la ventana
@@ -20,7 +22,7 @@ class Inscripciones:
         self.win.geometry(str(wwin)+"x"+str(hwin)+"+"+str(px)+"+"+str(py))#posición y tamaño de la ventana
         self.win.resizable(False, False)
         self.win.title("Inscripciones de Materias y Cursos")
-        self.win.iconbitmap( "img/icono2.ico")
+        self.win.iconphoto(False, tk.PhotoImage(file=f"{ruta_proyecto}/img/icono2.png"))
         
         # Crea los frames
         self.frm_1 = tk.Frame(self.win, name="frm_1")

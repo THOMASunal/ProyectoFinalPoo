@@ -98,7 +98,7 @@ class Inscripciones:
         
         #Entry Curso
         self.id_Curso = ttk.Entry(self.frm_1, name="id_curso")
-        self.id_Curso.configure(justify="left", width=166,state="readonly")
+        self.id_Curso.configure(justify="left", width=166)
         self.id_Curso.place(anchor="nw", width=166, x=100, y=180)
         
         #Label Descripción del Curso
@@ -108,9 +108,8 @@ class Inscripciones:
         
         #Entry de Descripción del Curso 
         self.descripc_Curso = ttk.Entry(self.frm_1, name="descripc_curso")
-        self.descripc_Curso.configure(justify="left", width=166,state="readonly")
+        self.descripc_Curso.configure(justify="left", width=166)
         self.descripc_Curso.place(anchor="nw", width=300, x=325, y=180)
-         
 
 
         ''' Botones  de la Aplicación'''
@@ -118,7 +117,7 @@ class Inscripciones:
         #Boton Consultar
         self.btnConsultar=ttk.Button(self.frm_1, name="btnconsultar")
         # al presionar el boton, se debe confirmar que se halla ingresado un alumno para desplegar los cursos
-        self.btnConsultar.configure(text="Consultar",command=lambda: self.cargar_tV() if self.apellidos.get()!="" or self.nombres.get()!="" else msg.showerror(title="¡Atención!",message="-Ingrese un Alumno-"))
+        self.btnConsultar.configure(text="Consultar",command=lambda: self.cargar_tV() if self.apellidos.get()!="" or self.nombres.get()!="" else msg.showerror(title="¡Atención!",message="¡Ingrese un Alumno!"))
         self.btnConsultar.place(anchor="nw", width=100, x=680, y=180)
         
         #Botón Guardar
@@ -151,6 +150,7 @@ class Inscripciones:
         #Treeview
         self.tView = ttk.Treeview(self.frm_1, name="tview")
         self.tView.configure(selectmode="extended")
+        
         
         #Columnas del Treeview
         self.tView_cols = ['tV_descripción','horas','estado']
@@ -278,18 +278,14 @@ class Inscripciones:
        
         #Insertar en los entrys nombres y apellidos
         self.mod_name_lastn(datos[0][0],datos[0][1])
-        self.descripc_Curso.configure(justify="left", width=166,state="normal")
-        self.id_Curso.configure(justify="left", width=166,state="normal")
         self.id_Curso.delete(0,tk.END)
         self.descripc_Curso.delete(0,tk.END)
-        
-        
+        self.cargar_tV()
     
     def cancelar_botton(self):
         
         """La función cancelar_botton limpia todos los campos de la venta para
             poder ingresar nueva información"""
-        
             
         # limpiar el campo de No.Inscripción
         self.num_Inscripcion.delete(0,tk.END)
@@ -307,9 +303,6 @@ class Inscripciones:
         # limpiar los campos de Id Curso, Curso y Hora
         self.id_Curso.delete(0,tk.END)
         self.descripc_Curso.delete(0,tk.END)
-        self.descripc_Curso.configure(justify="left", width=166,state="readonly")
-        self.id_Curso.configure(justify="left", width=166,state="readonly")
-        
 
         # limpiar el tree view
         self.tView.delete(*self.tView.get_children())
@@ -332,13 +325,10 @@ class Inscripciones:
         self.apellidos.config(state="readonly")
     
     def cargar_tV(self,orden="Código_Curso"):
-
-     if self.nombres.get().strip() and self.apellidos.get().strip():
-        
         
         """La función cargar_tV sirve para cargar en el treeView los datos de los 
             cursos encontrados en la base de datos"""
-      
+
         self.tView.delete(*self.tView.get_children())
         query="SELECT * FROM Cursos"
         
@@ -364,8 +354,6 @@ class Inscripciones:
                     
             #agregar info al treeview
             self.tView.insert("","end",text=curso[0],values=(curso[1],curso[2],estado))
-     else:
-         msg.showerror(title="¡Atención!",message="Ingrese un Alumno")
     
     def tV_order(self,event):
         

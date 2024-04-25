@@ -400,6 +400,7 @@ class Inscripciones:
             elif colum_id=="#2" and position_y=="heading":
                 self.cargar_tV("Num_Horas")
 
+
     
 if __name__ == "__main__":
     app = Inscripciones()

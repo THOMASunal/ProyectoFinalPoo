@@ -101,7 +101,7 @@ class Inscripciones:
         self.lblIdCurso.place(anchor="nw", x=20, y=180)
         
         #Entry Curso
-        self.id_Curso = ttk.Entry(self.frm_1, name="id_curso")
+        self.id_Curso = ttk.Entry(self.frm_1, name="id_curso",state="readonly")
         self.id_Curso.configure(justify="left", width=166)
         self.id_Curso.place(anchor="nw", width=166, x=100, y=180)
         
@@ -112,7 +112,7 @@ class Inscripciones:
         
         #Entry de Descripción del Curso 
         self.descripc_Curso = ttk.Entry(self.frm_1, name="descripc_curso")
-        self.descripc_Curso.configure(justify="left", width=166)
+        self.descripc_Curso.configure(justify="left", width=166,state="readonly")
         self.descripc_Curso.place(anchor="nw", width=300, x=325, y=180)
 
 
@@ -284,7 +284,9 @@ class Inscripciones:
         self.mod_name_lastn(datos[0][0],datos[0][1])
         self.id_Curso.delete(0,tk.END)
         self.descripc_Curso.delete(0,tk.END)
-        self.cargar_tV()
+        self.id_Curso.configure(justify="left", width=166,state="normal")
+        self.descripc_Curso.configure(justify="left", width=166,state="normal")
+        
     
     def guardar_botton(self):
         # obtener la fila seleccionada del tree view
@@ -332,6 +334,8 @@ class Inscripciones:
         # limpiar los campos de Id Curso, Curso y Hora
         self.id_Curso.delete(0,tk.END)
         self.descripc_Curso.delete(0,tk.END)
+        self.id_Curso.configure(justify="left", width=166,state="readonly")
+        self.descripc_Curso.configure(justify="left", width=166,state="readonly")
 
         # limpiar el tree view
         self.tView.delete(*self.tView.get_children())
@@ -354,10 +358,13 @@ class Inscripciones:
         self.apellidos.config(state="readonly")
     
     def cargar_tV(self,orden="Código_Curso"):
+       if self.nombres.get().strip() and self.apellidos.get().strip():
         
         """La función cargar_tV sirve para cargar en el treeView los datos de los 
             cursos encontrados en la base de datos"""
-
+        
+        self.id_Curso.configure(justify="left", width=166,state="normal")
+        self.descripc_Curso.configure(justify="left", width=166,state="normal")
         self.tView.delete(*self.tView.get_children())
         query="SELECT * FROM Cursos"
         

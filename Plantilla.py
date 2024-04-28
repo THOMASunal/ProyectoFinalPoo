@@ -37,10 +37,15 @@ class Inscripciones:
         #Label No. Inscripción
         self.lblNoInscripcion.place(anchor="nw", x=680, y=20)
         
-        #Entry No. Inscripción
-        self.num_Inscripcion = ttk.Entry(self.frm_1, name="num_inscripcion")
+        #Combobox No. Inscripción
+        self.no_Inscrip_Select = tk.StringVar()
+        self.num_Inscripcion = ttk.Combobox(self.frm_1, name="num_inscripcion", state="readonly", 
+                                           postcommand=self.cargar_No_Inscripciones, 
+                                           textvariable=self.no_Inscrip_Select)
         self.num_Inscripcion.configure(justify="right")
         self.num_Inscripcion.place(anchor="nw", width=100, x=682, y=42)
+        self.num_Inscripcion.bind("<<ComboboxSelected>>", self.info_Alum_For_Inscrp) #Rellenar los campos segun el No. Inscripción
+        
         
         #Label Fecha
         self.lblFecha = ttk.Label(self.frm_1, name="lblfecha")
@@ -65,16 +70,16 @@ class Inscripciones:
         self.lblIdAlumno.place(anchor="nw", x=20, y=85)
         
         #Combobox Alumno
-        self.idAlumSelect=tk.StringVar()
+        self.id_Alum_Select=tk.StringVar()
         self.cmbx_Id_Alumno = ttk.Combobox(self.frm_1,
                                            name="cmbx_id_alumno", 
                                            postcommand=self.update_arrow_IdAlum , 
-                                           textvariable=self.idAlumSelect)
+                                           textvariable=self.id_Alum_Select)
         self.cmbx_Id_Alumno.place(anchor="nw", width=112, x=110, y=85)
         # Actualizar la info cuando se selecciona una opción de la lista desplegable
-        self.cmbx_Id_Alumno.bind("<<ComboboxSelected>>", self.info_Alum)
+        self.cmbx_Id_Alumno.bind("<<ComboboxSelected>>", lambda event: (self.info_Alum(),self.asignacion_No_Inscripcion())) #Rellenar el No. Inscripción segun el Alumno
         #cada que se oprima alguna tecla en el campo de id Alumno, limpiar los campos que se llenan automaticamente
-        self.cmbx_Id_Alumno.bind("<KeyRelease>",lambda event:(self.mod_name_lastn(),self.tView.delete(*self.tView.get_children()),self.id_Curso.delete(0,tk.END),self.descripc_Curso.delete(0,tk.END)) )
+        self.cmbx_Id_Alumno.bind("<KeyRelease>",lambda event:(self.mod_name_lastn(),self.tView.delete(*self.tView.get_children()),self.id_Curso.delete(0,tk.END),self.descripc_Curso.delete(0,tk.END), self.num_Inscripcion.set("")))
         
         
         #Label nombres
@@ -101,7 +106,7 @@ class Inscripciones:
         self.lblIdCurso.place(anchor="nw", x=20, y=180)
         
         #Entry Curso
-        self.id_Curso = ttk.Entry(self.frm_1, name="id_curso",state="readonly")
+        self.id_Curso = ttk.Entry(self.frm_1, name="id_curso")
         self.id_Curso.configure(justify="left", width=166)
         self.id_Curso.place(anchor="nw", width=166, x=100, y=180)
         
@@ -112,7 +117,7 @@ class Inscripciones:
         
         #Entry de Descripción del Curso 
         self.descripc_Curso = ttk.Entry(self.frm_1, name="descripc_curso")
-        self.descripc_Curso.configure(justify="left", width=166,state="readonly")
+        self.descripc_Curso.configure(justify="left", width=166)
         self.descripc_Curso.place(anchor="nw", width=300, x=325, y=180)
 
 
@@ -239,7 +244,7 @@ class Inscripciones:
         return cursor.fetchall()
 
     #Extraer datos de alumnos de la db de forma dinamica
-    def update_arrow_IdAlum(self, *args):
+    def update_arrow_IdAlum(self, *event):
         
         """La función update_arrow_IdAlum se encarga de cargar los Id_Alumno
             de la tabla de Alumnos al combobox con su mismo nombre"""
@@ -256,13 +261,13 @@ class Inscripciones:
             de registros mostrados en el combobox. En caso de no encontrar una
             coincidencia mostrara un letrero de advertencia."""
         
-        instrc = f"SELECT Id_Alumno FROM Alumnos WHERE Id_Alumno like '%{self.idAlumSelect.get()}%'"
+        instrc = f"SELECT Id_Alumno FROM Alumnos WHERE Id_Alumno like '%{self.id_Alum_Select.get()}%'"
         resultados=self.run_query(instrc)
         
         # Para saber si la busqueda no retorno nada
         if resultados:
    
-            if (self.idAlumSelect.get()!=resultados[0][0] or len(resultados)!=1) and len(resultados)!=0:
+            if (self.id_Alum_Select.get()!=resultados[0][0] or len(resultados)!=1) and len(resultados)!=0:
             
                 self.cmbx_Id_Alumno['values']=resultados
                 
@@ -272,73 +277,19 @@ class Inscripciones:
             self.cmbx_Id_Alumno.delete(0,tk.END)
     
     #Cuando se seleccione el codigo, se llene los campos de nombres y apellidos
-    def info_Alum(self,event):
+    def info_Alum(self,*event):
         
         """La función info_Alum muestra en los campos de nombres y apellidos 
             los datos correspondientes a el id seleccionado en el combobox
             de Id_Alumnos"""
     
-        datos = self.run_query(f"SELECT Nombres, Apellidos FROM Alumnos WHERE Id_Alumno='{self.idAlumSelect.get()}' ORDER BY Id_Alumno")
+        datos = self.run_query(f"SELECT Nombres, Apellidos FROM Alumnos WHERE Id_Alumno='{self.id_Alum_Select.get()}' ORDER BY Id_Alumno")
        
         #Insertar en los entrys nombres y apellidos
         self.mod_name_lastn(datos[0][0],datos[0][1])
         self.id_Curso.delete(0,tk.END)
         self.descripc_Curso.delete(0,tk.END)
-        self.id_Curso.configure(justify="left", width=166,state="normal")
-        self.descripc_Curso.configure(justify="left", width=166,state="normal")
-        
-    
-    def guardar_botton(self):
-        # obtener la fila seleccionada del tree view
-        current_item_id = self.tView.focus()
-        current_item = self.tView.item(current_item_id)
-        if current_item["text"] == "":
-            msg.showerror("Error", "Porfavor seleccione una fila")
-            return
-        if current_item["values"][2].lower() == "inscrito":
-            msg.showerror("Error", "El estudiante ya esta inscrito en el curso")
-            return
-
-        id_alumno = self.cmbx_Id_Alumno.get()
-        fecha_inscripcion = datetime.now().date()
-        codigo_curso = current_item["text"]
-        
-        # añadir la inscripcion a la base de datos
-        self.run_query(f"INSERT INTO Inscritos (Id_Alumno,Fecha_Inscripción,Código_Curso) VALUES ('{id_alumno}','{fecha_inscripcion}','{codigo_curso}')")
-
-        # actualizar el estado de inscripción (visualmente)
-        current_item["values"][2] = "Inscrito"
-        self.tView.item(item=current_item_id, values=current_item["values"])
-
-        msg.showinfo("Info", "Alumno inscrito exitosamente")
-
-
-    def cancelar_botton(self):
-        
-        """La función cancelar_botton limpia todos los campos de la venta para
-            poder ingresar nueva información"""
-            
-        # limpiar el campo de No.Inscripción
-        self.num_Inscripcion.delete(0,tk.END)
-
-        #limpiar el campo de fecha
-        self.fecha.delete(0,tk.END)
-        self.fecha.insert(0, "dd/mm/aaaa")
-        
-        # limpiar el campo de cmbx_Id_Alumno
-        self.cmbx_Id_Alumno.delete(0,tk.END)
-
-        # limpiar los campos de nombres y apellidos
-        self.mod_name_lastn()
-
-        # limpiar los campos de Id Curso, Curso y Hora
-        self.id_Curso.delete(0,tk.END)
-        self.descripc_Curso.delete(0,tk.END)
-        self.id_Curso.configure(justify="left", width=166,state="readonly")
-        self.descripc_Curso.configure(justify="left", width=166,state="readonly")
-
-        # limpiar el tree view
-        self.tView.delete(*self.tView.get_children())
+        self.cargar_tV()
     
     def mod_name_lastn(self,nombre=None,apellido=None,*args):
         
@@ -358,13 +309,10 @@ class Inscripciones:
         self.apellidos.config(state="readonly")
     
     def cargar_tV(self,orden="Código_Curso"):
-       if self.nombres.get().strip() and self.apellidos.get().strip():
         
         """La función cargar_tV sirve para cargar en el treeView los datos de los 
             cursos encontrados en la base de datos"""
-        
-        self.id_Curso.configure(justify="left", width=166,state="normal")
-        self.descripc_Curso.configure(justify="left", width=166,state="normal")
+
         self.tView.delete(*self.tView.get_children())
         query="SELECT * FROM Cursos"
         
@@ -379,7 +327,7 @@ class Inscripciones:
         #ingresar cada registro en el tV
         for curso in cursos:
             estado="No Inscrito"    
-            datos=self.run_query(f"SELECT Código_Curso FROM Inscritos WHERE Id_Alumno='{self.idAlumSelect.get()}'")
+            datos=self.run_query(f"SELECT Código_Curso FROM Inscritos WHERE Id_Alumno='{self.id_Alum_Select.get()}'")
 
             #  Para saber el estado del curso con respecto al estudiante, se debe de conocer 
             #  si el curso ya se encuentra en la tabla de inscritos asociado a el Id del alumno
@@ -407,7 +355,102 @@ class Inscripciones:
             elif colum_id=="#2" and position_y=="heading":
                 self.cargar_tV("Num_Horas")
 
+    def asignacion_No_Inscripcion(self):
+        
+        """La función asignacion_No_Inscripcion sirve para generar el No_Inscripción.
+            Para generar el No_Inscripción se debe de tener en cuenta que el No_Inscripción
+            debe de ser unico para cada estudiante, buscando en la base de datos si ya hay
+            un No_Inscripción creado para ese estudiante, y si no, se le asigna el siguiente
+            al ultimo No_Inscripción creado"""
+        
+        query = f"SELECT DISTINCT No_Inscripción FROM Inscritos WHERE Id_Alumno = {self.id_Alum_Select.get()} ORDER BY No_Inscripción DESC"
+        inscripciones=self.run_query(query)
+        
+        if len(inscripciones) == 0:
+            no_Exis=self.run_query("SELECT MAX(No_Inscripción) FROM Inscritos")
+            if no_Exis[0][0]==None:
+                self.num_Inscripcion.set(1)
+            else:
+                self.num_Inscripcion.set(no_Exis[0][0]+1)
+        else:
+            self.num_Inscripcion.set(inscripciones[0][0])
+    
+    def cargar_No_Inscripciones(self):
+        
+        """La función cargar_No_Inscripciones sirve para cargar en el tcmx los No_Inscripciones
+            encontrados en la base de datos"""
+        
+        query = "SELECT DISTINCT No_Inscripción FROM Inscritos ORDER BY No_Inscripción DESC"
+        inscritos=self.run_query(query)
+        self.num_Inscripcion['values']=inscritos
+    
+    def info_Alum_For_Inscrp(self,event):
+        
+        """La función info_Alum_For_Inscrp identifica el No. de inscripción seleccionado
+            para mostrar la informacion de ese estudiante"""
 
+        query=f"SELECT DISTINCT Id_Alumno FROM Inscritos WHERE No_Inscripción='{self.num_Inscripcion.get()}'"
+        datos=self.run_query(query)
+        self.id_Alum_Select.set(datos[0][0])
+        self.info_Alum(event)
+    
+    #==============================================================================
+    # Funcionalidad de los botones
+    
+    #Toca arreglarlo aun, falta: Agregar horario y que pueda verificar si al fecha es correcta
+    def guardar_botton(self):
+        # obtener la fila seleccionada del tree view
+        current_item_id = self.tView.focus()
+        current_item = self.tView.item(current_item_id)
+        if current_item["text"] == "":
+            msg.showerror("Error", "Porfavor seleccione una fila")
+            return
+        if current_item["values"][2].lower() == "inscrito":
+            msg.showerror("Error", "El estudiante ya esta inscrito en el curso")
+            return
+
+        id_alumno = self.cmbx_Id_Alumno.get()
+        fecha_inscripcion = self.fecha.get()
+        codigo_curso = current_item["text"]
+        no_Inscripcion = self.num_Inscripcion.get()
+        
+        # añadir la inscripcion a la base de datos
+        self.run_query(f"INSERT INTO Inscritos (No_Inscripción,Id_Alumno,Fecha_Inscripción,Código_Curso) VALUES ('{no_Inscripcion}','{id_alumno}','{fecha_inscripcion}','{codigo_curso}')")
+
+        # actualizar el estado de inscripción (visualmente)
+        current_item["values"][2] = "Inscrito"
+        self.tView.item(item=current_item_id, values=current_item["values"])
+
+        msg.showinfo("Info", "Alumno inscrito exitosamente")
+
+
+    def cancelar_botton(self):
+        
+        """La función cancelar_botton limpia todos los campos de la venta para
+            poder ingresar nueva información"""
+            
+        # limpiar el campo de No_Inscripción
+        self.num_Inscripcion.delete(0,tk.END)
+
+        #limpiar el campo de fecha
+        self.fecha.delete(0,tk.END)
+        self.fecha.insert(0, "dd/mm/aaaa")
+        
+        # limpiar el campo de cmbx_Id_Alumno y num_Inscripcion
+        self.cmbx_Id_Alumno.delete(0,tk.END)
+        self.num_Inscripcion.delete(0,tk.END)
+
+        # limpiar los campos de nombres y apellidos
+        self.mod_name_lastn()
+
+        # limpiar los campos de Id Curso, Curso y Hora
+        self.id_Curso.delete(0,tk.END)
+        self.descripc_Curso.delete(0,tk.END)
+
+        # limpiar el tree view
+        self.tView.delete(*self.tView.get_children())
+    
+    
     
 if __name__ == "__main__":
     app = Inscripciones()

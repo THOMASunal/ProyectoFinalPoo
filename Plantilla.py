@@ -126,29 +126,29 @@ class Inscripciones:
         #Boton Consultar
         self.btnConsultar=ttk.Button(self.frm_1, name="btnconsultar")
         # al presionar el boton, se debe confirmar que se halla ingresado un alumno para desplegar los cursos
-        self.btnConsultar.configure(text="Consultar",command=lambda: self.cargar_tV() if self.apellidos.get()!="" or self.nombres.get()!="" else msg.showerror(title="¡Atención!",message="¡Ingrese un Alumno!"))
-        self.btnConsultar.place(anchor="nw", width=100, x=680, y=180)
-        
+        self.btnConsultar.configure(text="Consultar",command=lambda: self.opciones("S"))
+        self.btnConsultar.place(anchor="nw",width=100, x=670, y=180)
+
         #Botón Guardar
         self.btnGuardar = ttk.Button(self.frm_1, name="btnguardar")
-        self.btnGuardar.configure(text='Guardar', command=self.guardar_botton)
+        self.btnGuardar.configure(text='Guardar',command=lambda: self.opciones("G"))
         self.btnGuardar.place(anchor="nw", x=200, y=220)
         
         #Botón Editar
         self.btnEditar = ttk.Button(self.frm_1, name="btneditar")
-        self.btnEditar.configure(text='Editar')
+        self.btnEditar.configure(text='Editar',command=lambda: self.opciones("E"))
         self.btnEditar.place(anchor="nw", x=300, y=220)
         
         #Botón Eliminar
         self.btnEliminar = ttk.Button(self.frm_1, name="btneliminar")
-        self.btnEliminar.configure(text='Eliminar', )
+        self.btnEliminar.configure(text='Eliminar',command=lambda: self.opciones("D"))
         self.btnEliminar.place(anchor="nw", x=400, y=220)
         
         #Botón Cancelar
         self.btnCancelar = ttk.Button(self.frm_1, name="btncancelar")
-        self.btnCancelar.configure(text='Cancelar', command=self.cancelar_botton)
+        self.btnCancelar.configure(text='Cancelar',command=lambda: self.opciones("C"))
         self.btnCancelar.place(anchor="nw", x=500, y=220)
-        
+ 
         #Separador
         separator1 = ttk.Separator(self.frm_1)
         separator1.configure(orient="horizontal")
@@ -233,9 +233,7 @@ class Inscripciones:
             if self.verificacion_fecha():
                 pass
             else:
-                msg.showerror(title="¡Atención!",
-                         message="¡Fecha no valida!"
-                   )
+                msg.showerror(title="¡Atención!",message="¡Fecha no valida!")
     
     #Función verificacion fecha
     def verificacion_fecha(self):
@@ -281,7 +279,7 @@ class Inscripciones:
             de registros mostrados en el combobox. En caso de no encontrar una
             coincidencia mostrara un letrero de advertencia."""
         
-        instrc = f"SELECT Id_Alumno FROM Alumnos WHERE Id_Alumno like '%{self.id_Alum_Select.get()}%'"
+        instrc = f"SELECT Id_Alumno FROM Alumnos WHERE Id_Alumno LIKE '%{self.id_Alum_Select.get()}%'"
         resultados=self.run_query(instrc)
         
         # Para saber si la busqueda no retorno nada
@@ -369,9 +367,9 @@ class Inscripciones:
             query="SELECT * FROM Cursos"
             
             if self.id_Curso.get()!="":
-                query +=f" WHERE Código_Curso like '%{self.id_Curso.get()}%'"
+                query +=f" WHERE Código_Curso LIKE '%{self.id_Curso.get()}%' "
             elif self.descripc_Curso.get()!="":
-                query +=f" WHERE Descripción like '%{self.descripc_Curso.get()}%'"   
+                query +=f" WHERE Descripción LIKE '%{self.descripc_Curso.get()}%' "   
                 
             query += f" ORDER BY {orden}"
             cursos=self.run_query(query)
@@ -456,13 +454,12 @@ class Inscripciones:
     #==============================================================================
     # Funcionalidad de los botones
     
-    #Toca arreglarlo aun, falta: Agregar horario y que pueda verificar si al fecha es correcta
     def guardar_botton(self):
         # obtener la fila seleccionada del tree view
         current_item_id = self.tView.focus()
         current_item = self.tView.item(current_item_id)
         if current_item["text"] == "":
-            msg.showerror("Error", "Porfavor seleccione una fila")
+            msg.showerror("Error", "Por favor seleccione una fila")
             return
         if current_item["values"][2].lower() == "inscrito":
             msg.showerror("Error", "El estudiante ya esta inscrito en el curso")
@@ -473,15 +470,21 @@ class Inscripciones:
         codigo_curso = current_item["text"]
         no_Inscripcion = self.num_Inscripcion.get()
         
+        #verifica si la fecha a ingresar en la db es valida
+        if self.verificacion_fecha():
+
         # añadir la inscripcion a la base de datos
-        self.run_query(f"INSERT INTO Inscritos (No_Inscripción,Id_Alumno,Fecha_Inscripción,Código_Curso) VALUES ('{no_Inscripcion}','{id_alumno}','{fecha_inscripcion}','{codigo_curso}')")
+            self.run_query(f"INSERT INTO Inscritos (No_Inscripción,Id_Alumno,Fecha_Inscripción,Código_Curso) VALUES ('{no_Inscripcion}','{id_alumno}','{fecha_inscripcion}','{codigo_curso}')")
 
-        # actualizar el estado de inscripción (visualmente)
-        current_item["values"][2] = "Inscrito"
-        self.tView.item(item=current_item_id, values=current_item["values"])
+            # actualizar el estado de inscripción (visualmente)
+            current_item["values"][2] = "Inscrito"
+            self.tView.item(item=current_item_id, values=current_item["values"])
 
-        msg.showinfo("Info", "Alumno inscrito exitosamente")
+            msg.showinfo("Info", "Alumno inscrito exitosamente")
+        
+        else: 
 
+            msg.showerror(title="¡Atención!",message="¡Fecha no valida!")
 
     def cancelar_botton(self):
         
@@ -497,7 +500,7 @@ class Inscripciones:
         
         # limpiar el campo de cmbx_Id_Alumno y num_Inscripcion
         self.cmbx_Id_Alumno.delete(0,tk.END)
-        self.num_Inscripcion.delete(0,tk.END)
+        self.no_Inscrip_Select.set("")
 
         # limpiar los campos de nombres y apellidos
         self.mod_name_lastn()
@@ -509,6 +512,64 @@ class Inscripciones:
         # limpiar el tree view
         self.tView.delete(*self.tView.get_children())
     
+    def delete_botton(self):
+        
+        """La función delete_botton elimina la inscripción seleccionada en el tree view.
+            Si no se selecciona ningun campo del tree view, se eliminnara todas las inscripciones
+            de ese No. de inscripción"""
+        
+        current_item_id = self.tView.focus()
+        current_item = self.tView.item(current_item_id)
+        
+        if current_item["text"] == "":
+            
+            query=f"SELECT * FROM Inscritos WHERE No_Inscripción='{self.num_Inscripcion.get()}'"
+            existencia=self.run_query(query)
+            
+            if len(existencia)==0:
+                msg.showerror("Error", "¡No hay inscripciones para eliminar!")
+            else:
+                texto=(self.id_Alum_Select.get()+" - "+self.nombres.get()+" "+self.apellidos.get()).center(60)
+                texto1="Esta por eliminar todos los cursos inscritos por:".center(60)
+                if msg.askokcancel("Eliminar", f"""{texto1}\n\n{texto}"""):
+                    
+                    query = f"DELETE FROM Inscritos WHERE No_Inscripción='{self.num_Inscripcion.get()}'"
+                    self.run_query(query)
+                    msg.showinfo("Eliminar", "Eliminación exitosa")
+                    self.cargar_tV(inscrito=True)
+                
+        elif current_item["values"][2].lower() == "inscrito":
+            texto1="Esta por eliminar el curso inscrito:".center(60)
+            texto=(current_item["text"]+" "+current_item["values"][0]).center(60)
+            if msg.askokcancel("Eliminar", f"""{texto1}\n\n{texto}"""):
+                
+                query = f"DELETE FROM Inscritos WHERE No_Inscripción='{self.num_Inscripcion.get()}' and Código_Curso='{current_item['text']}'"
+                self.run_query(query)
+                msg.showinfo("Eliminar", "Eliminación exitosa")
+                self.cargar_tV(inscrito=True)
+        else:
+            msg.showerror("Error", "¡El curso no se encuentra inscrito!")
+            
+    def opciones(self, opcion):
+        
+        """La función opciones se encarga de establecer el comportamiento 
+            de los botones de la ventana de inscripciones"""
+        
+        #Para que funcionen los botones, debe de haber un Alumno seleccionado
+        if self.apellidos.get()!="" or self.nombres.get()!="":
+            
+            if opcion=="G":
+                self.guardar_botton()
+            elif opcion=="E":
+                pass
+            elif opcion=="D":
+                self.delete_botton()
+            elif opcion=="C":
+                self.cancelar_botton()
+            elif opcion=="S":
+                self.cargar_tV()
+        else:
+            msg.showerror(title="¡Atención!",message="¡Ingrese un Alumno!")
     
 if __name__ == "__main__":
     app = Inscripciones()

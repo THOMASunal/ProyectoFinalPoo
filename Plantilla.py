@@ -206,6 +206,12 @@ class Inscripciones:
             suprimiendo los caracteres exedentes, ademas de poner automaticamente
             las divisiones de dias, meses y años correspondientes al formato
             de la fecha trabajado"""
+            
+        #Borrar todos los espacios de la fecha
+        fecha=self.fecha.get()
+        if " " in fecha:
+            self.fecha.delete(0,tk.END)
+            self.fecha.insert(0,fecha.replace(" ",""))
         
         #insertar "/"" automatico para separar dias, mese y años
         if len(self.fecha.get())==2 or len(self.fecha.get())==5:
@@ -223,13 +229,27 @@ class Inscripciones:
             de fecha corresponde a una fecha valida o existente"""
         
         if len(self.fecha.get())<=10:
-            try:
-             # Intentar convertirla a una fecha.
-                fechav = datetime.strptime(self.fecha.get(), "%d/%m/%Y")
-            except:
+            
+            if self.verificacion_fecha():
+                pass
+            else:
                 msg.showerror(title="¡Atención!",
                          message="¡Fecha no valida!"
                    )
+    
+    #Función verificacion fecha
+    def verificacion_fecha(self):
+        
+        """La función verificacion de fecha valida si la fecha es correcta o no
+            retornando True o False"""
+            
+        fecha=True
+        try:
+        # Intentar convertirla a una fecha.
+            fechav = datetime.strptime(self.fecha.get(), "%d/%m/%Y")
+        except:
+            fecha=False
+        return fecha
     
     # Función para ejecutar las instrucciones (query)
     def run_query(self, query):
@@ -291,6 +311,7 @@ class Inscripciones:
         self.descripc_Curso.delete(0,tk.END)
         self.cargar_tV()
     
+    #Modificar nombres y apellidos
     def mod_name_lastn(self,nombre=None,apellido=None,*args):
         
         # limpiar los campos de nombres y apellidos
@@ -308,41 +329,74 @@ class Inscripciones:
         self.nombres.config(state="readonly")
         self.apellidos.config(state="readonly")
     
-    def cargar_tV(self,orden="Código_Curso"):
+    #Cargar datos en el treeView
+    def cargar_tV(self,orden="Código_Curso",inscrito=False):
         
         """La función cargar_tV sirve para cargar en el treeView los datos de los 
             cursos encontrados en la base de datos"""
 
         self.tView.delete(*self.tView.get_children())
-        query="SELECT * FROM Cursos"
+        estado="No Inscrito"
         
-        if self.id_Curso.get()!="":
-            query +=f" WHERE Código_Curso like '%{self.id_Curso.get()}%'"
-        elif self.descripc_Curso.get()!="":
-            query +=f" WHERE Descripción like '%{self.descripc_Curso.get()}%'"   
+        #Organizar por estado de inscripción
+        if inscrito:
             
-        query += f" ORDER BY {orden}"
-        cursos=self.run_query(query)
-        
-        #ingresar cada registro en el tV
-        for curso in cursos:
-            estado="No Inscrito"    
-            datos=self.run_query(f"SELECT Código_Curso FROM Inscritos WHERE Id_Alumno='{self.id_Alum_Select.get()}'")
-
-            #  Para saber el estado del curso con respecto al estudiante, se debe de conocer 
-            #  si el curso ya se encuentra en la tabla de inscritos asociado a el Id del alumno
-            if len(datos)!=0:
-                for dato in datos: 
-                    if curso[0] == dato[0]: 
-                        estado="Inscrito"
+            # Buscar las coincidencias entre la tabla de cursos y la de inscritos con base a un alumno
+            query =f""" SELECT Cursos.* FROM Cursos INNER JOIN Inscritos 
+                    ON Inscritos.Código_Curso = Cursos.Código_Curso 
+                    WHERE No_Inscripción = '{self.num_Inscripcion.get()}' ORDER BY {orden}"""
                     
-            #agregar info al treeview
-            self.tView.insert("","end",text=curso[0],values=(curso[1],curso[2],estado))
+            cursos=self.run_query(query)
+            
+            if len(cursos)!=0:
+                estado="Inscrito"
+                for curso in cursos:
+                    self.tView.insert("","end",text=curso[0],values=(curso[1],curso[2],estado))
+            
+            estado="No Inscrito"
+            
+            # Busca todos los cursos qeu no aparezcan en la tabla de inscritos para el alumno seleccionado
+            query =f"""SELECT Cursos.* FROM Cursos LEFT JOIN Inscritos 
+                    ON Cursos.Código_Curso = Inscritos.Código_Curso and Inscritos.No_Inscripción = '{self.num_Inscripcion.get()}' 
+                    WHERE Inscritos.Código_Curso IS NULL ORDER BY {orden}"""
+            
+            cursos=self.run_query(query)
+
+            for curso in cursos:
+                    self.tView.insert("","end",text=curso[0],values=(curso[1],curso[2],estado))
+            
+        else:
+            query="SELECT * FROM Cursos"
+            
+            if self.id_Curso.get()!="":
+                query +=f" WHERE Código_Curso like '%{self.id_Curso.get()}%'"
+            elif self.descripc_Curso.get()!="":
+                query +=f" WHERE Descripción like '%{self.descripc_Curso.get()}%'"   
+                
+            query += f" ORDER BY {orden}"
+            cursos=self.run_query(query)
+            
+            #ingresar cada registro en el tV
+            for curso in cursos:
+                estado="No Inscrito"    
+                datos=self.run_query(f"SELECT Código_Curso FROM Inscritos WHERE Id_Alumno='{self.id_Alum_Select.get()}'")
+
+                #  Para saber el estado del curso con respecto al estudiante, se debe de conocer 
+                #  si el curso ya se encuentra en la tabla de inscritos asociado a el Id del alumno
+                if len(datos)!=0:
+                    for dato in datos: 
+                        if curso[0] == dato[0]: 
+                            estado="Inscrito"
+                        
+                #agregar info al treeview
+                self.tView.insert("","end",text=curso[0],values=(curso[1],curso[2],estado))
     
+    #Determina que cabecera se ha seleccionado para organizarlo
     def tV_order(self,event):
         
         """La función tv_order identifica que heading se ha seleccionado
             para poder organizar los datos por medio de ese parametro"""
+            
         if self.apellidos.get()!="" or self.nombres.get()!="":
             
             colum_id = self.tView.identify_column(event.x)
@@ -354,7 +408,10 @@ class Inscripciones:
                 self.cargar_tV("Descripción")
             elif colum_id=="#2" and position_y=="heading":
                 self.cargar_tV("Num_Horas")
+            elif colum_id=="#3" and position_y=="heading":
+                self.cargar_tV(inscrito=True)
 
+    #Asigna un numero de inscripcion al alumno
     def asignacion_No_Inscripcion(self):
         
         """La función asignacion_No_Inscripcion sirve para generar el No_Inscripción.
@@ -375,6 +432,7 @@ class Inscripciones:
         else:
             self.num_Inscripcion.set(inscripciones[0][0])
     
+    #Alimenta el combobox de No. de inscripciones
     def cargar_No_Inscripciones(self):
         
         """La función cargar_No_Inscripciones sirve para cargar en el tcmx los No_Inscripciones
@@ -384,6 +442,7 @@ class Inscripciones:
         inscritos=self.run_query(query)
         self.num_Inscripcion['values']=inscritos
     
+    #Carga la info del alumno segun el No. de inscripción
     def info_Alum_For_Inscrp(self,event):
         
         """La función info_Alum_For_Inscrp identifica el No. de inscripción seleccionado
@@ -449,7 +508,6 @@ class Inscripciones:
 
         # limpiar el tree view
         self.tView.delete(*self.tView.get_children())
-    
     
     
 if __name__ == "__main__":

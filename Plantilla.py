@@ -358,6 +358,7 @@ class Inscripciones:
                     WHERE No_Inscripción = '{self.num_Inscripcion.get()}' ORDER BY {orden}"""
                     
             cursos=self.run_query(query)
+            #Buscar las coincidencias entre la tabla de Horario y la de inscritos con base a un alumno
             jornada_1=self.run_query(f"SELECT Horario.* FROM Horario INNER JOIN Inscritos ON Inscritos.Jornada_ID = Horario.Jornada_ID WHERE Inscritos.Id_Alumno = '{self.id_Alum_Select.get()}'"
                     )   
            
@@ -403,6 +404,7 @@ class Inscripciones:
                         if curso[0] == dato[0]: 
                             estado="Inscrito"
                             self.tView.insert("","end",text=curso[0],values=(curso[1],curso[2],estado,jornada_1[0]))
+            #Si no hay elementos en la tabla datos se entiende que esa materia el alumno no la tiene inscrita                
                 else:
                     self.tView.insert("","end",text=curso[0],values=(curso[1],curso[2],"No inscrito","Sin Jornada"))
 
@@ -493,13 +495,9 @@ class Inscripciones:
         
         #verifica si la fecha a ingresar en la db es valida
         if self.verificacion_fecha():
+            #Si Tod Es valido se crea la vetnana emergente para elegir Jornada
             self.crear_ventana_emergente()
             
-            
-
-
-       
-        
         else: 
 
             msg.showerror(title="¡Atención!",message="¡Fecha no valida!")
@@ -588,7 +586,9 @@ class Inscripciones:
                 self.cargar_tV()
         else:
             msg.showerror(title="¡Atención!",message="¡Ingrese un Alumno!")
-
+        
+#-----------------------------------------------------------------------------------------------------------------------------
+#Ventana Emergente
     def crear_ventana_emergente(self):
      self.ventana_emergente = tk.Toplevel(self.win)
      
@@ -598,16 +598,16 @@ class Inscripciones:
      self.ventana_emergente.geometry(f'{ventana_width}x{ventana_height}')
      self.frm_2 = tk.Frame(self.ventana_emergente, name="frm_1")
      self.frm_2.pack(fill=tk.BOTH, expand=True) 
+    # Opcional: Hacer que la ventana emergente sea la única interactiva
      self.ventana_emergente.grab_set()
-        # Opcional: Hacer que la ventana emergente sea la única interactiva
      self.ventana_emergente.focus_set()
-     #Label Ediat Jornada
+     #Label Editar Jornada
      self.lblEditarJornada = ttk.Label(self.frm_2, name="lblEditarJornada")
      self.lblEditarJornada.configure(background="#f7f9fd",font="{Arial} 10 {bold}",
                                         state="normal"
                                         ,text='Editar Jornada')
      self.lblEditarJornada.place(x=10,y=20)
-    #Label Instrucciones al usuario para escoger Jornada DIruna
+    #Label Instrucciones al usuario para escoger Jornada Diurna
      self.lblJornadaDiur = ttk.Label(self.frm_2, name="lblJornadaDiur")
      self.lblJornadaDiur.configure(background="#f7f9fd",font="{Arial} 10 ",
                                         state="normal"
@@ -642,7 +642,7 @@ class Inscripciones:
 #Funciones Ventana Emergente
       
     def definir_Jornada(self):
-        """Esta Funcion lee la informacion del entry, y a partir de ahi  """
+        """Esta Funcion lee la informacion del entry de la pagina emergente, y a partir de ahi actua  """
         current_item_id = self.tView.focus()
         current_item = self.tView.item(current_item_id)
         id_alumno = self.cmbx_Id_Alumno.get()
@@ -653,7 +653,7 @@ class Inscripciones:
             msg.showerror("Error", "¡El curso no se encurrentra inscrito!")
             
         else:
-             # añadir la inscripcion a la base de datos
+             # despues de que el alumno eligio correctamente la jornada se añade la inscripcion a la base de datos
             Jornada=self.eleccion_jornada.get()
             self.run_query(f"INSERT INTO Inscritos (No_Inscripción,Id_Alumno,Fecha_Inscripción,Código_Curso,Jornada_ID) VALUES ('{no_Inscripcion}','{id_alumno}','{fecha_inscripcion}','{codigo_curso}','{Jornada}')") 
             jornada_1=self.run_query(f"SELECT Horario.* FROM Horario INNER JOIN Inscritos ON Inscritos.Jornada_ID = Horario.Jornada_ID WHERE Inscritos.Id_Alumno = '{self.id_Alum_Select.get()}'"
@@ -661,22 +661,12 @@ class Inscripciones:
             # actualizar el estado de inscripción (visualmente)
             current_item["values"][2] = "Inscrito"
             current_item["values"][3] = jornada_1[0]
-
-            
-            
             self.tView.item(item=current_item_id, values=current_item["values"])
-            
 
             msg.showinfo("Info", "Alumno inscrito exitosamente") 
+            #Cerrar la ventana apenas se confirme el mensaje de inscripcion exitosa
             self.ventana_emergente.destroy()
 
-
-        
-
-
-     ##Aprender Primero Como es el paradigma de POO Para Tkinter
-     ##Crear en una ventana aparte la paginade editar
-     ##La funcion Editar Solo tiene que hacer que el entry sea de state normal
 if __name__ == "__main__":
     app = Inscripciones()
     app.run()

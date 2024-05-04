@@ -1,5 +1,5 @@
-        """ Esta funcion te permite crear una ventana emergente sin destruir la ventana principal"""
-        def abrir_ventana(): 
+""" Esta funcion te permite crear una ventana emergente sin destruir la ventana principal"""
+def abrir_ventana(): 
             win=tk.Toplevel() #Ubicacion de la ventana
             wwin, hwin = 400, 300 #Tamaño de la ventana
             px = round(self.win.winfo_screenwidth()/2-wwin/2) # posición x
@@ -13,4 +13,4 @@
             boton_eliminar.pack()
             boton_guardar = tk.Button(win, text= "Inscribir curso", )   #Boton guardar, aun en proceso
             boton_guardar.pack()
-        abrir_ventana()
+            abrir_ventana()

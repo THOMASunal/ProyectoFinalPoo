@@ -5,15 +5,23 @@ from tkinter import messagebox as msg
 import tkinter.ttk as ttk
 import sqlite3 as sql
 from datetime import datetime
-from os import path
+from tkinter import PhotoImage
+
+from pathlib import Path
+
+
 
 class Inscripciones:
     
     def __init__(self, master=None):
         # Ventan principal 
-        ruta_proyecto = __file__.replace(path.basename(__file__), "")
-        ruta_imagen = path.abspath(ruta_proyecto + "img/icono2.png")
-        ruta_db = path.abspath(ruta_proyecto + "db/Inscripciones.db")
+        ruta_proyecto = Path(__file__).parent
+        ruta_imagen = ruta_proyecto / "img" / "icono2.png"
+        ruta_db = ruta_proyecto / "db" / "Inscripciones.db"
+
+# Construir rutas a los recursos
+        
+        
 
         self.db_name =  ruta_db #establecer la ruta de la db
         self.win = tk.Tk(master)
@@ -134,10 +142,7 @@ class Inscripciones:
         self.btnGuardar.configure(text='Guardar',command=lambda: self.opciones("G"))
         self.btnGuardar.place(anchor="nw", x=200, y=220)
         
-        #Botón Editar
-        self.btnEditar = ttk.Button(self.frm_1, name="btneditar")
-        self.btnEditar.configure(text='Editar',command=lambda: self.opciones("E"))
-        self.btnEditar.place(anchor="nw", x=300, y=220)
+        
         
         #Botón Eliminar
         self.btnEliminar = ttk.Button(self.frm_1, name="btneliminar")
@@ -148,6 +153,11 @@ class Inscripciones:
         self.btnCancelar = ttk.Button(self.frm_1, name="btncancelar")
         self.btnCancelar.configure(text='Cancelar',command=lambda: self.opciones("C"))
         self.btnCancelar.place(anchor="nw", x=500, y=220)
+        
+         #Botón Editar
+        self.btnEditar = ttk.Button(self.frm_1, name="btneditar")
+        self.btnEditar.configure(text='Editar',command=lambda: self.opciones("E"))
+        self.btnEditar.place(anchor="nw", x=300, y=220)
  
         #Separador
         separator1 = ttk.Separator(self.frm_1)
@@ -162,19 +172,21 @@ class Inscripciones:
         
         
         #Columnas del Treeview
-        self.tView_cols = ['tV_descripción','horas','estado']
-        self.tView_dcols = ['tV_descripción','horas','estado']
+        self.tView_cols = ['tV_descripción','horas','estado',"jornada"]
+        self.tView_dcols = ['tV_descripción','horas','estado',"jornada"]
         self.tView.configure(columns=self.tView_cols,displaycolumns=self.tView_dcols)
         self.tView.column("#0",anchor="w",stretch=True,width=10,minwidth=10)
         self.tView.column("tV_descripción",anchor="w",stretch=True,width=200,minwidth=50)
         self.tView.column("horas",anchor="w",stretch=True,width=10,minwidth=10)
         self.tView.column("estado",anchor="w",stretch=True,width=30,minwidth=20)
+        self.tView.column("jornada",anchor="w",stretch=True,width=10,minwidth=10)
         
         #Cabeceras
         self.tView.heading("#0", anchor="w", text='ID Curso')
         self.tView.heading("tV_descripción", anchor="w", text='Nombre del Curso')
         self.tView.heading("horas", anchor="w", text='Horas ')
         self.tView.heading("estado", anchor="w", text='Estado de Inscripción')
+        self.tView.heading("jornada",anchor="w",text="Jornada")
         self.tView.place(anchor="nw", height=300, width=790, x=4, y=280)
         self.tView.bind("<Button-1>",self.tV_order)
         
@@ -336,6 +348,7 @@ class Inscripciones:
         self.tView.delete(*self.tView.get_children())
         estado="No Inscrito"
         
+        
         #Organizar por estado de inscripción
         if inscrito:
             
@@ -345,11 +358,14 @@ class Inscripciones:
                     WHERE No_Inscripción = '{self.num_Inscripcion.get()}' ORDER BY {orden}"""
                     
             cursos=self.run_query(query)
-            
+            jornada_1=self.run_query(f"SELECT Horario.* FROM Horario INNER JOIN Inscritos ON Inscritos.Jornada_ID = Horario.Jornada_ID WHERE Inscritos.Id_Alumno = '{self.id_Alum_Select.get()}'"
+                    )   
+           
+                                    
             if len(cursos)!=0:
                 estado="Inscrito"
                 for curso in cursos:
-                    self.tView.insert("","end",text=curso[0],values=(curso[1],curso[2],estado))
+                    self.tView.insert("","end",text=curso[0],values=(curso[1],curso[2],estado,jornada_1[0]))
             
             estado="No Inscrito"
             
@@ -361,7 +377,7 @@ class Inscripciones:
             cursos=self.run_query(query)
 
             for curso in cursos:
-                    self.tView.insert("","end",text=curso[0],values=(curso[1],curso[2],estado))
+                    self.tView.insert("","end",text=curso[0],values=(curso[1],curso[2],estado,"Sin Jornada"))
             
         else:
             query="SELECT * FROM Cursos"
@@ -373,7 +389,8 @@ class Inscripciones:
                 
             query += f" ORDER BY {orden}"
             cursos=self.run_query(query)
-            
+            jornada_1=self.run_query(f"SELECT Horario.* FROM Horario INNER JOIN Inscritos ON Inscritos.Jornada_ID = Horario.Jornada_ID WHERE Inscritos.Id_Alumno = '{self.id_Alum_Select.get()}'"
+                    ) 
             #ingresar cada registro en el tV
             for curso in cursos:
                 estado="No Inscrito"    
@@ -385,9 +402,13 @@ class Inscripciones:
                     for dato in datos: 
                         if curso[0] == dato[0]: 
                             estado="Inscrito"
-                        
+                            self.tView.insert("","end",text=curso[0],values=(curso[1],curso[2],estado,jornada_1[0]))
+                else:
+                    self.tView.insert("","end",text=curso[0],values=(curso[1],curso[2],"No inscrito","Sin Jornada"))
+
+               
                 #agregar info al treeview
-                self.tView.insert("","end",text=curso[0],values=(curso[1],curso[2],estado))
+                
     
     #Determina que cabecera se ha seleccionado para organizarlo
     def tV_order(self,event):
@@ -408,6 +429,9 @@ class Inscripciones:
                 self.cargar_tV("Num_Horas")
             elif colum_id=="#3" and position_y=="heading":
                 self.cargar_tV(inscrito=True)
+            elif colum_id=="#3" and position_y=="heading":
+                self.cargar_tV("Jornada")
+           
 
     #Asigna un numero de inscripcion al alumno
     def asignacion_No_Inscripcion(self):
@@ -465,22 +489,16 @@ class Inscripciones:
             msg.showerror("Error", "El estudiante ya esta inscrito en el curso")
             return
 
-        id_alumno = self.cmbx_Id_Alumno.get()
-        fecha_inscripcion = self.fecha.get()
-        codigo_curso = current_item["text"]
-        no_Inscripcion = self.num_Inscripcion.get()
+        
         
         #verifica si la fecha a ingresar en la db es valida
         if self.verificacion_fecha():
+            self.crear_ventana_emergente()
+            
+            
 
-        # añadir la inscripcion a la base de datos
-            self.run_query(f"INSERT INTO Inscritos (No_Inscripción,Id_Alumno,Fecha_Inscripción,Código_Curso) VALUES ('{no_Inscripcion}','{id_alumno}','{fecha_inscripcion}','{codigo_curso}')")
 
-            # actualizar el estado de inscripción (visualmente)
-            current_item["values"][2] = "Inscrito"
-            self.tView.item(item=current_item_id, values=current_item["values"])
-
-            msg.showinfo("Info", "Alumno inscrito exitosamente")
+       
         
         else: 
 
@@ -570,7 +588,95 @@ class Inscripciones:
                 self.cargar_tV()
         else:
             msg.showerror(title="¡Atención!",message="¡Ingrese un Alumno!")
-    
+
+    def crear_ventana_emergente(self):
+     self.ventana_emergente = tk.Toplevel(self.win)
+     
+     self.ventana_emergente.title("Nueva Ventana")
+     ventana_width = 400
+     ventana_height = 300
+     self.ventana_emergente.geometry(f'{ventana_width}x{ventana_height}')
+     self.frm_2 = tk.Frame(self.ventana_emergente, name="frm_1")
+     self.frm_2.pack(fill=tk.BOTH, expand=True) 
+     self.ventana_emergente.grab_set()
+        # Opcional: Hacer que la ventana emergente sea la única interactiva
+     self.ventana_emergente.focus_set()
+     #Label Ediat Jornada
+     self.lblEditarJornada = ttk.Label(self.frm_2, name="lblEditarJornada")
+     self.lblEditarJornada.configure(background="#f7f9fd",font="{Arial} 10 {bold}",
+                                        state="normal"
+                                        ,text='Editar Jornada')
+     self.lblEditarJornada.place(x=10,y=20)
+    #Label Instrucciones al usuario para escoger Jornada DIruna
+     self.lblJornadaDiur = ttk.Label(self.frm_2, name="lblJornadaDiur")
+     self.lblJornadaDiur.configure(background="#f7f9fd",font="{Arial} 10 ",
+                                        state="normal"
+                                        ,text='Digite "1" si desea inscribir esta materia en jornada Diurna')
+     self.lblJornadaDiur.place(anchor="nw",y=60,x=20)
+     #Label Instrucciones al usuario para escoger Jornada Nocturna
+     self.lblJornadaNoc = ttk.Label(self.frm_2, name="lblJornadaNoc")
+     self.lblJornadaNoc.configure(background="#f7f9fd",font="{Arial} 10 ",
+                                        state="normal"
+                                        ,text='Digite "2" si desea inscribir esta materia en jornada Nocturna')
+     self.lblJornadaNoc.place(anchor="nw",y=80,x=20)
+     #Label Instrucciones al usuario para escoger Jornada Fin de Semana
+     self.lblFinDeSem=ttk.Label(self.frm_2,name="lblFinDeSem")
+     self.lblFinDeSem.configure(background="#f7f9fd",font="{Arial} 10",state="normal",
+                                 text='Digite "3" si desea inscribir esta materia las Fines de Semana')
+     self.lblFinDeSem.place(anchor="nw",y=100,x=20)
+     #Label Instruccion de confirmar su eleccion
+     self.lblConfirmElec=ttk.Label(self.frm_2,name="lblConfirmElec")
+     self.lblConfirmElec.configure(background="#f7f9fd",font="{Arial} 10",state="normal",
+                                 text='Presione el boton Editar para confirmar su eleccion')
+     self.lblConfirmElec.place(anchor="nw",y=120,x=20)
+
+     #Entry Para digitar el numero
+     self.eleccion_jornada = ttk.Entry(self.frm_2, name="eleccion_jornada",state="normal")
+     self.eleccion_jornada.place(anchor="nw", width=200, y=180, x=20)
+         
+      #Botón Editar
+     self.btnEditar2 = ttk.Button(self.frm_2, name="btneditar2")
+     self.btnEditar2.configure(text='Editar2',command=self.definir_Jornada)
+     self.btnEditar2.place(anchor="nw", x=300, y=220)
+#-----------------------------------------------------------------------------------------------------------
+#Funciones Ventana Emergente
+      
+    def definir_Jornada(self):
+        """Esta Funcion lee la informacion del entry, y a partir de ahi  """
+        current_item_id = self.tView.focus()
+        current_item = self.tView.item(current_item_id)
+        id_alumno = self.cmbx_Id_Alumno.get()
+        fecha_inscripcion = self.fecha.get()
+        codigo_curso = current_item["text"]
+        no_Inscripcion = self.num_Inscripcion.get()
+        if self.eleccion_jornada.get() not in ("1","2","3"):
+            msg.showerror("Error", "¡El curso no se encurrentra inscrito!")
+            
+        else:
+             # añadir la inscripcion a la base de datos
+            Jornada=self.eleccion_jornada.get()
+            self.run_query(f"INSERT INTO Inscritos (No_Inscripción,Id_Alumno,Fecha_Inscripción,Código_Curso,Jornada_ID) VALUES ('{no_Inscripcion}','{id_alumno}','{fecha_inscripcion}','{codigo_curso}','{Jornada}')") 
+            jornada_1=self.run_query(f"SELECT Horario.* FROM Horario INNER JOIN Inscritos ON Inscritos.Jornada_ID = Horario.Jornada_ID WHERE Inscritos.Id_Alumno = '{self.id_Alum_Select.get()}'"
+                    )      
+            # actualizar el estado de inscripción (visualmente)
+            current_item["values"][2] = "Inscrito"
+            current_item["values"][3] = jornada_1[0]
+
+            
+            
+            self.tView.item(item=current_item_id, values=current_item["values"])
+            
+
+            msg.showinfo("Info", "Alumno inscrito exitosamente") 
+            self.ventana_emergente.destroy()
+
+
+        
+
+
+     ##Aprender Primero Como es el paradigma de POO Para Tkinter
+     ##Crear en una ventana aparte la paginade editar
+     ##La funcion Editar Solo tiene que hacer que el entry sea de state normal
 if __name__ == "__main__":
     app = Inscripciones()
     app.run()

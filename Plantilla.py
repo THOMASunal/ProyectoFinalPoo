@@ -359,15 +359,16 @@ class Inscripciones:
                     
             cursos=self.run_query(query)
             #Buscar las coincidencias entre la tabla de Horario y la de inscritos con base a un alumno
-            jornada_1=self.run_query(f"SELECT Horario.* FROM Horario INNER JOIN Inscritos ON Inscritos.Jornada_ID = Horario.Jornada_ID WHERE Inscritos.Id_Alumno = '{self.id_Alum_Select.get()}'"
-                    )   
-           
+               
+            
                                     
             if len(cursos)!=0:
                 estado="Inscrito"
+                
                 for curso in cursos:
+                    jornada_1=self.run_query(f"SELECT Horario.* FROM Horario INNER JOIN Inscritos ON Inscritos.Jornada_ID = Horario.Jornada_ID WHERE Inscritos.Id_Alumno = '{self.id_Alum_Select.get() }' AND Inscritos.Código_Curso='{curso[0]}'")
                     self.tView.insert("","end",text=curso[0],values=(curso[1],curso[2],estado,jornada_1[0]))
-            
+                
             estado="No Inscrito"
             
             # Busca todos los cursos qeu no aparezcan en la tabla de inscritos para el alumno seleccionado
@@ -375,9 +376,9 @@ class Inscripciones:
                     ON Cursos.Código_Curso = Inscritos.Código_Curso and Inscritos.No_Inscripción = '{self.num_Inscripcion.get()}' 
                     WHERE Inscritos.Código_Curso IS NULL ORDER BY {orden}"""
             
-            cursos=self.run_query(query)
+            cursox=self.run_query(query)
 
-            for curso in cursos:
+            for curso in cursox:
                     self.tView.insert("","end",text=curso[0],values=(curso[1],curso[2],estado,"Sin Jornada"))
             
         else:
@@ -390,23 +391,30 @@ class Inscripciones:
                 
             query += f" ORDER BY {orden}"
             cursos=self.run_query(query)
-            jornada_1=self.run_query(f"SELECT Horario.* FROM Horario INNER JOIN Inscritos ON Inscritos.Jornada_ID = Horario.Jornada_ID WHERE Inscritos.Id_Alumno = '{self.id_Alum_Select.get()}'"
-                    ) 
+            
             #ingresar cada registro en el tV
+            #Por como esta hehco el ciclo, puede que se repitan valores en el TV por eso el set.()
+            #Se asegura de agregarlos solo si no estan en el TV
+            
             for curso in cursos:
                 estado="No Inscrito"    
                 datos=self.run_query(f"SELECT Código_Curso FROM Inscritos WHERE Id_Alumno='{self.id_Alum_Select.get()}'")
-
+                jornada="Sin Jornada"
                 #  Para saber el estado del curso con respecto al estudiante, se debe de conocer 
                 #  si el curso ya se encuentra en la tabla de inscritos asociado a el Id del alumno
+                
                 if len(datos)!=0:
                     for dato in datos: 
-                        if curso[0] == dato[0]: 
+                        if curso[0] == dato[0] :
+                            jornada_1=self.run_query(f"SELECT Horario.* FROM Horario INNER JOIN Inscritos ON Inscritos.Jornada_ID = Horario.Jornada_ID WHERE Inscritos.Id_Alumno = '{self.id_Alum_Select.get() }' AND Inscritos.Código_Curso='{curso[0]}'") 
                             estado="Inscrito"
-                            self.tView.insert("","end",text=curso[0],values=(curso[1],curso[2],estado,jornada_1[0]))
-            #Si no hay elementos en la tabla datos se entiende que esa materia el alumno no la tiene inscrita                
-                else:
-                    self.tView.insert("","end",text=curso[0],values=(curso[1],curso[2],"No inscrito","Sin Jornada"))
+                            jornada=jornada_1[0]
+                           
+                         
+            #Si no hay elementos en la lista datos se entiende que esa materia el alumno no la tiene inscrita                
+                
+                
+                self.tView.insert("","end",text=curso[0],values=(curso[1],curso[2],estado,jornada))
 
                
                 #agregar info al treeview
@@ -431,8 +439,7 @@ class Inscripciones:
                 self.cargar_tV("Num_Horas")
             elif colum_id=="#3" and position_y=="heading":
                 self.cargar_tV(inscrito=True)
-            elif colum_id=="#3" and position_y=="heading":
-                self.cargar_tV("Jornada")
+           
            
 
     #Asigna un numero de inscripcion al alumno
@@ -656,7 +663,7 @@ class Inscripciones:
              # despues de que el alumno eligio correctamente la jornada se añade la inscripcion a la base de datos
             Jornada=self.eleccion_jornada.get()
             self.run_query(f"INSERT INTO Inscritos (No_Inscripción,Id_Alumno,Fecha_Inscripción,Código_Curso,Jornada_ID) VALUES ('{no_Inscripcion}','{id_alumno}','{fecha_inscripcion}','{codigo_curso}','{Jornada}')") 
-            jornada_1=self.run_query(f"SELECT Horario.* FROM Horario INNER JOIN Inscritos ON Inscritos.Jornada_ID = Horario.Jornada_ID WHERE Inscritos.Id_Alumno = '{self.id_Alum_Select.get()}'"
+            jornada_1=self.run_query(f"SELECT Horario.* FROM Horario INNER JOIN Inscritos ON Inscritos.Jornada_ID = Horario.Jornada_ID WHERE Inscritos.Id_Alumno = '{self.id_Alum_Select.get() }' AND Inscritos.Código_Curso='{codigo_curso}'"
                     )      
             # actualizar el estado de inscripción (visualmente)
             current_item["values"][2] = "Inscrito"

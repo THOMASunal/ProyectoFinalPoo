@@ -3,10 +3,11 @@ from tkinter import ttk
 
 def cabecera_seleccionada(event):
     # Identificar la columna seleccionada
-    columna_id = tree.identify_column(event.x)
-    fila_id= tree.identify_region(y=event.y,x=event.x)
+    current_item_id = tree.focus()
+    current_item = tree.item(current_item_id)
+    lista=current_item["values"]
     # Obtener el texto del encabezado de la columna
-    print("Cabecera seleccionada:", columna_id, fila_id,type(fila_id))
+    print("Cabecera seleccionada:", current_item["text"],type(lista))
 
 # Crear la ventana principal
 root = tk.Tk()

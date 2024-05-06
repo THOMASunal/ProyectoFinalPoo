@@ -5,26 +5,26 @@ from tkinter import messagebox as msg
 import tkinter.ttk as ttk
 import sqlite3 as sql
 from datetime import datetime
+from datetime import date
 from os import path
 
 class Inscripciones:
     
     def __init__(self, master=None):
         # Ventan principal 
-        ruta_proyecto = __file__.replace(path.basename(__file__), "")
-        ruta_imagen = path.abspath(ruta_proyecto + "img/icono2.png")
-        ruta_db = path.abspath(ruta_proyecto + "db/Inscripciones.db")
+        self.ruta_proyecto = __file__.replace(path.basename(__file__), "")
+        self.ruta_imagen = path.abspath(self.ruta_proyecto + "img/icono2.png")
+        ruta_db = path.abspath(self.ruta_proyecto + "db/Inscripciones.db")
 
         self.db_name =  ruta_db #establecer la ruta de la db
         self.win = tk.Tk(master)
         self.win.configure(background="#f7f9fd") #fondo ventana
-        wwin, hwin = 800, 600 #Tamaño de la ventana
-        px = round(self.win.winfo_screenwidth()/2-wwin/2) # posición x
-        py = round(self.win.winfo_screenheight()/2-hwin/2) # posición y
-        self.win.geometry(str(wwin)+"x"+str(hwin)+"+"+str(px)+"+"+str(py))#posición y tamaño de la ventana
+        geometry=self.centrar_ventana(800,600,self.win)
+        self.win.geometry(f"{geometry}")
+        
         self.win.resizable(False, False)
         self.win.title("Inscripciones de Materias y Cursos")
-        self.win.iconphoto(False, tk.PhotoImage(file=ruta_imagen))
+        self.win.iconphoto(False, tk.PhotoImage(file=self.ruta_imagen))
         
         # Crea los frames
         self.frm_1 = tk.Frame(self.win, name="frm_1")
@@ -132,27 +132,34 @@ class Inscripciones:
         #Botón Guardar
         self.btnGuardar = ttk.Button(self.frm_1, name="btnguardar")
         self.btnGuardar.configure(text='Guardar',command=lambda: self.opciones("G"))
-        self.btnGuardar.place(anchor="nw", x=200, y=220)
+        self.btnGuardar.place(anchor="nw", x=200, y=240)
         
         #Botón Editar
         self.btnEditar = ttk.Button(self.frm_1, name="btneditar")
         self.btnEditar.configure(text='Editar',command=lambda: self.opciones("E"))
-        self.btnEditar.place(anchor="nw", x=300, y=220)
+        self.btnEditar.place(anchor="nw", x=300, y=240)
         
         #Botón Eliminar
         self.btnEliminar = ttk.Button(self.frm_1, name="btneliminar")
         self.btnEliminar.configure(text='Eliminar',command=lambda: self.opciones("D"))
-        self.btnEliminar.place(anchor="nw", x=400, y=220)
+        self.btnEliminar.place(anchor="nw", x=400, y=240)
         
         #Botón Cancelar
         self.btnCancelar = ttk.Button(self.frm_1, name="btncancelar")
         self.btnCancelar.configure(text='Cancelar',command=lambda: self.opciones("C"))
-        self.btnCancelar.place(anchor="nw", x=500, y=220)
- 
-        #Separador
+        self.btnCancelar.place(anchor="nw", x=500, y=240)
+        
+        #Botón Fecha de hoy
+        self.btnFechaHoy = ttk.Button(self.frm_1, name="btnfechahoy")
+        self.btnFechaHoy.configure(text='+', padding=(0,-5),command=self.fecha_Hoy)
+        self.btnFechaHoy.place(anchor="nw",width=20, height=20,x=775, y=81)
+        
+        
+        #Separadores
         separator1 = ttk.Separator(self.frm_1)
         separator1.configure(orient="horizontal")
-        separator1.place(anchor="nw", width=796, x=2, y=260)
+        separator1.place(anchor="nw", width=796, x=2, y=225)
+
 
         ''' Treeview de la Aplicación'''
         
@@ -162,19 +169,21 @@ class Inscripciones:
         
         
         #Columnas del Treeview
-        self.tView_cols = ['tV_descripción','horas','estado']
-        self.tView_dcols = ['tV_descripción','horas','estado']
+        self.tView_cols = ['tV_descripción','horas','estado','Jornada']
+        self.tView_dcols = ['tV_descripción','horas','estado','Jornada']
         self.tView.configure(columns=self.tView_cols,displaycolumns=self.tView_dcols)
-        self.tView.column("#0",anchor="w",stretch=True,width=10,minwidth=10)
+        self.tView.column("#0",anchor="w",stretch=True,width=20,minwidth=10)
         self.tView.column("tV_descripción",anchor="w",stretch=True,width=200,minwidth=50)
-        self.tView.column("horas",anchor="w",stretch=True,width=10,minwidth=10)
+        self.tView.column("horas",anchor="w",stretch=True,width=5,minwidth=10)
         self.tView.column("estado",anchor="w",stretch=True,width=30,minwidth=20)
+        self.tView.column("Jornada",anchor="w",stretch=True,width=20,minwidth=20)
         
         #Cabeceras
         self.tView.heading("#0", anchor="w", text='ID Curso')
         self.tView.heading("tV_descripción", anchor="w", text='Nombre del Curso')
         self.tView.heading("horas", anchor="w", text='Horas ')
         self.tView.heading("estado", anchor="w", text='Estado de Inscripción')
+        self.tView.heading("Jornada", anchor="w", text='Jornada')
         self.tView.place(anchor="nw", height=300, width=790, x=4, y=280)
         self.tView.bind("<Button-1>",self.tV_order)
         
@@ -340,18 +349,20 @@ class Inscripciones:
         if inscrito:
             
             # Buscar las coincidencias entre la tabla de cursos y la de inscritos con base a un alumno
-            query =f""" SELECT Cursos.* FROM Cursos INNER JOIN Inscritos 
+            query =f""" SELECT Cursos.*, Inscritos.Jornada FROM Cursos INNER JOIN Inscritos 
                     ON Inscritos.Código_Curso = Cursos.Código_Curso 
                     WHERE No_Inscripción = '{self.num_Inscripcion.get()}' ORDER BY {orden}"""
-                    
+            
             cursos=self.run_query(query)
             
             if len(cursos)!=0:
                 estado="Inscrito"
                 for curso in cursos:
-                    self.tView.insert("","end",text=curso[0],values=(curso[1],curso[2],estado))
+                    jornada=curso[-1]
+                    self.tView.insert("","end",text=curso[0],values=(curso[1],curso[2],estado,jornada))
             
             estado="No Inscrito"
+            jornada="..."
             
             # Busca todos los cursos qeu no aparezcan en la tabla de inscritos para el alumno seleccionado
             query =f"""SELECT Cursos.* FROM Cursos LEFT JOIN Inscritos 
@@ -361,7 +372,7 @@ class Inscripciones:
             cursos=self.run_query(query)
 
             for curso in cursos:
-                    self.tView.insert("","end",text=curso[0],values=(curso[1],curso[2],estado))
+                    self.tView.insert("","end",text=curso[0],values=(curso[1],curso[2],estado,jornada))
             
         else:
             query="SELECT * FROM Cursos"
@@ -376,7 +387,8 @@ class Inscripciones:
             
             #ingresar cada registro en el tV
             for curso in cursos:
-                estado="No Inscrito"    
+                estado="No Inscrito"
+                jornada="..."   
                 datos=self.run_query(f"SELECT Código_Curso FROM Inscritos WHERE Id_Alumno='{self.id_Alum_Select.get()}'")
 
                 #  Para saber el estado del curso con respecto al estudiante, se debe de conocer 
@@ -385,9 +397,10 @@ class Inscripciones:
                     for dato in datos: 
                         if curso[0] == dato[0]: 
                             estado="Inscrito"
+                            jornada=self.run_query(f"SELECT Jornada FROM Inscritos WHERE Código_Curso='{curso[0]}' and Id_Alumno='{self.id_Alum_Select.get()}'")[0][0]
                         
                 #agregar info al treeview
-                self.tView.insert("","end",text=curso[0],values=(curso[1],curso[2],estado))
+                self.tView.insert("","end",text=curso[0],values=(curso[1],curso[2],estado,jornada))
     
     #Determina que cabecera se ha seleccionado para organizarlo
     def tV_order(self,event):
@@ -473,14 +486,19 @@ class Inscripciones:
         #verifica si la fecha a ingresar en la db es valida
         if self.verificacion_fecha():
 
-        # añadir la inscripcion a la base de datos
-            self.run_query(f"INSERT INTO Inscritos (No_Inscripción,Id_Alumno,Fecha_Inscripción,Código_Curso) VALUES ('{no_Inscripcion}','{id_alumno}','{fecha_inscripcion}','{codigo_curso}')")
+            jornada = self.eleccion_jornada(codigo_curso,current_item["values"][0])
+            
+            if jornada:
+                
+                 # añadir la inscripcion a la base de datos
+                self.run_query(f"INSERT INTO Inscritos (No_Inscripción,Id_Alumno,Fecha_Inscripción,Código_Curso,Jornada) VALUES ('{no_Inscripcion}','{id_alumno}','{fecha_inscripcion}','{codigo_curso}','{jornada}')")
 
-            # actualizar el estado de inscripción (visualmente)
-            current_item["values"][2] = "Inscrito"
-            self.tView.item(item=current_item_id, values=current_item["values"])
+                # actualizar el estado de inscripción (visualmente)
+                current_item["values"][2] = "Inscrito"
+                current_item["values"][3] = jornada
+                self.tView.item(item=current_item_id, values=current_item["values"])
 
-            msg.showinfo("Info", "Alumno inscrito exitosamente")
+                msg.showinfo("Info", "Alumno inscrito exitosamente")
         
         else: 
 
@@ -540,7 +558,7 @@ class Inscripciones:
                 
         elif current_item["values"][2].lower() == "inscrito":
             texto1="Esta por eliminar el curso inscrito:".center(60)
-            texto=(current_item["text"]+" "+current_item["values"][0]).center(60)
+            texto=("ID: "+current_item["text"]+" | Curso: "+current_item["values"][0]).center(60)
             if msg.askokcancel("Eliminar", f"""{texto1}\n\n{texto}"""):
                 
                 query = f"DELETE FROM Inscritos WHERE No_Inscripción='{self.num_Inscripcion.get()}' and Código_Curso='{current_item['text']}'"
@@ -570,6 +588,89 @@ class Inscripciones:
                 self.cargar_tV()
         else:
             msg.showerror(title="¡Atención!",message="¡Ingrese un Alumno!")
+
+    def eleccion_jornada(self,id_Curso,curso):
+        
+        """La función eleccion_jornada se encarga de generar una ventana
+            emergente para la elección de la jornada del curso a inscribir"""
+        
+        #variablke para dejar continuar la función si se oprime algun boton
+        interruptor=tk.BooleanVar(value=False)
+        resultado=tk.StringVar()
+        winEmergente= tk.Toplevel()
+        winEmergente.resizable(0,0)
+        geometry=self.centrar_ventana(300,160,winEmergente)
+        winEmergente.geometry(f"{geometry}")
+        winEmergente.title("Inscripcción de curso")
+        winEmergente.iconphoto(False, tk.PhotoImage(file=self.ruta_imagen))
+        
+        #para evitar que se pueda usar otra ventana mientras winEmergente este abierto
+        winEmergente.grab_set()
+        winEmergente.focus_set()
+
+        #para cuando se cierra la ventana emergente se activa el interruptor
+        winEmergente.protocol("WM_DELETE_WINDOW", lambda: (interruptor.set(True),
+                                                           resultado.set("")))
+        
+        frm = tk.Frame(winEmergente, name="frm_1")
+        frm.configure(background="#f7f9fd", height=160, width=300)
+        
+        lblInfo=ttk.Label(frm, name="lblinfo")
+        lblInfo.configure(background="#f7f9fd",state="normal",
+                          text="Ha seleccionado el siguiente curso para inscribir:"
+                          )
+        lblInfo.place(anchor="center", x=150, y=15)
+        
+        
+        lblCurso= ttk.Label(frm, name="lblcurso")
+        lblCurso.configure(background="#90EE90",state="normal",text=f"ID: {id_Curso}  | Curso: {curso}")
+        lblCurso.place(anchor="center", x=150, y=45)
+        
+        lblJornada = ttk.Label(frm, name="lbljornada")
+        lblJornada.configure(background="#f7f9fd",state="normal",
+                          text=f"Seleccione la jornada en la que desea ver el curso:"
+                          )
+        lblJornada.place(anchor="center", x=150, y=75)
+        
+        jornada=tk.StringVar()
+        cmbx_Jornada = ttk.Combobox(frm, name="cmbx_jornada",state="readonly",values=["Diurna","Nocturna","Mixta"],textvariable=jornada)
+        cmbx_Jornada.place(anchor="center", x=150, y=105)
+        
+        btnConfirmar=ttk.Button(frm, name="btnconfirmar")
+        btnConfirmar.configure(text="Confirmar",command=lambda: (interruptor.set(True),resultado.set(jornada.get())))
+        btnConfirmar.place(anchor="nw",width=90 , x=50, y=130)
+        
+        btnCancelar=ttk.Button(frm, name="btncancelar")
+        btnCancelar.configure(text="Cancelar", command=lambda: (interruptor.set(True),resultado.set("")))
+        btnCancelar.place(anchor="nw",width=90 , x=160, y=130)
+        frm.pack()
+        
+        
+        winEmergente.wait_variable(interruptor)
+        
+        winEmergente.destroy()
+        return resultado.get()
+        
+    #Metodo para centrar la ventana
+    def centrar_ventana(self,wwin,hwin,win):
+        
+        """La función centrar_ventana centra la ventana en la pantalla del usuario"""
+        
+        px = round(win.winfo_screenwidth()/2-wwin/2)
+        py = round(win.winfo_screenheight()/2-hwin/2)
+        return str(wwin)+"x"+str(hwin)+"+"+str(px)+"+"+str(py)
+
+    def fecha_Hoy(self):
+        
+        fecha=f"{date.today().day}/{date.today().month}/{date.today().year}"
+        self.fecha.delete(0,tk.END)
+        if date.today().day<10 and date.today().month<10:
+            fecha=f"0{date.today().day}/0{date.today().month}/{date.today().year}"
+        elif date.today().month<10:
+            fecha=f"{date.today().day}/0{date.today().month}/{date.today().year}"
+        else:
+            fecha=f"0{date.today().day}/{date.today().month}/{date.today().year}"
+        self.fecha.insert(0,fecha)
     
 if __name__ == "__main__":
     app = Inscripciones()

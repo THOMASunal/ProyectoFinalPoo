@@ -435,11 +435,9 @@ class Inscripciones:
         inscripciones=self.run_query(query)
         
         if len(inscripciones) == 0:
-            no_Exis=self.run_query("SELECT MAX(No_Inscripción) FROM Inscritos")
-            if no_Exis[0][0]==None:
-                self.num_Inscripcion.set(1)
-            else:
-                self.num_Inscripcion.set(no_Exis[0][0]+1)
+            no_Exis=self.run_query("SELECT Valor FROM Variables_Numericas WHERE Nombre = 'No_Inscripciones'")
+            self.num_Inscripcion.set(no_Exis[0][0]+1)
+            
         else:
             self.num_Inscripcion.set(inscripciones[0][0])
     
@@ -464,10 +462,99 @@ class Inscripciones:
         self.id_Alum_Select.set(datos[0][0])
         self.info_Alum(event)
     
+    #Metodo para centrar la ventana
+    def centrar_ventana(self,wwin,hwin,win):
+        
+        """La función centrar_ventana centra la ventana en la pantalla del usuario"""
+        
+        px = round(win.winfo_screenwidth()/2-wwin/2)
+        py = round(win.winfo_screenheight()/2-hwin/2)
+        return str(wwin)+"x"+str(hwin)+"+"+str(px)+"+"+str(py)
+
+    #Metodo para cargar la fecha de hoy
+    def fecha_Hoy(self):
+        
+        fecha=f"{date.today().day}/{date.today().month}/{date.today().year}"
+        self.fecha.delete(0,tk.END)
+        if date.today().day<10 and date.today().month<10:
+            fecha=f"0{date.today().day}/0{date.today().month}/{date.today().year}"
+        elif date.today().month<10:
+            fecha=f"{date.today().day}/0{date.today().month}/{date.today().year}"
+        else:
+            fecha=f"0{date.today().day}/{date.today().month}/{date.today().year}"
+        self.fecha.insert(0,fecha)
+    
+    #ventana emergente para la selccion de jornada
+    def eleccion_jornada(self,id_Curso,curso):
+        
+        """La función eleccion_jornada se encarga de generar una ventana
+            emergente para la elección de la jornada del curso a inscribir"""
+        
+        #variable para dejar continuar la función si se oprime algun boton
+        interruptor=tk.BooleanVar(value=False)
+        
+        resultado=tk.StringVar()
+        winEmergente= tk.Toplevel()
+        winEmergente.resizable(0,0)
+        geometry=self.centrar_ventana(300,160,winEmergente)
+        winEmergente.geometry(f"{geometry}")
+        winEmergente.title("Inscripcción de curso")
+        winEmergente.iconphoto(False, tk.PhotoImage(file=self.ruta_imagen))
+        
+        #para evitar que se pueda usar otra ventana mientras winEmergente este abierto
+        winEmergente.grab_set()
+        winEmergente.focus_set()
+
+        #para cuando se cierra la ventana emergente se activa el interruptor
+        winEmergente.protocol("WM_DELETE_WINDOW", lambda: (interruptor.set(True),
+                                                           resultado.set("")))
+        
+        frm = tk.Frame(winEmergente, name="frm_1")
+        frm.configure(background="#f7f9fd", height=160, width=300)
+        
+        lblInfo=ttk.Label(frm, name="lblinfo")
+        lblInfo.configure(background="#f7f9fd",state="normal",
+                          text="Ha seleccionado el siguiente curso para inscribir:"
+                          )
+        lblInfo.place(anchor="center", x=150, y=15)
+        
+        
+        lblCurso= ttk.Label(frm, name="lblcurso")
+        lblCurso.configure(background="#90EE90",state="normal",text=f"ID: {id_Curso}  | Curso: {curso}")
+        lblCurso.place(anchor="center", x=150, y=45)
+        
+        lblJornada = ttk.Label(frm, name="lbljornada")
+        lblJornada.configure(background="#f7f9fd",state="normal",
+                          text=f"Seleccione la jornada en la que desea ver el curso:"
+                          )
+        lblJornada.place(anchor="center", x=150, y=75)
+        
+        jornada=tk.StringVar()
+        cmbx_Jornada = ttk.Combobox(frm, name="cmbx_jornada",state="readonly",values=["Diurna","Nocturna","Mixta"],textvariable=jornada)
+        cmbx_Jornada.place(anchor="center", x=150, y=105)
+        
+        btnConfirmar=ttk.Button(frm, name="btnconfirmar")
+        btnConfirmar.configure(text="Confirmar",command=lambda: (interruptor.set(True),resultado.set(jornada.get()))
+                                                                if jornada.get() != "" 
+                                                                else  msg.showerror("Error", "Por favor seleccione la jornada"))
+        btnConfirmar.place(anchor="nw",width=90 , x=50, y=130)
+        
+        btnCancelar=ttk.Button(frm, name="btncancelar")
+        btnCancelar.configure(text="Cancelar", command=lambda: (interruptor.set(True),resultado.set("")))
+        btnCancelar.place(anchor="nw",width=90 , x=160, y=130)
+        frm.pack()
+        
+        #Espera a que el interruptor se active para qeu continue la ejecucion
+        winEmergente.wait_variable(interruptor)
+        
+        winEmergente.destroy()
+        return resultado.get()
+        
     #==============================================================================
     # Funcionalidad de los botones
     
     def guardar_botton(self):
+        
         # obtener la fila seleccionada del tree view
         current_item_id = self.tView.focus()
         current_item = self.tView.item(current_item_id)
@@ -497,7 +584,14 @@ class Inscripciones:
                 current_item["values"][2] = "Inscrito"
                 current_item["values"][3] = jornada
                 self.tView.item(item=current_item_id, values=current_item["values"])
-
+                max_no=self.run_query("SELECT MAX(No_Inscripción) FROM Inscritos")
+                #print(max_no,type(max_no),max_no[0][0],type(max_no[0][0]),no_Inscripcion,type(no_Inscripcion))
+                
+                # Saber si es la ultima inscripción
+                if max_no[0][0]==int(no_Inscripcion):
+                    #hasta no inscribir la materia, no generar nuevo no de inscripción
+                    self.run_query(f"UPDATE Variables_Numericas SET Valor = {no_Inscripcion} WHERE Nombre = 'No_Inscripciones'")
+                
                 msg.showinfo("Info", "Alumno inscrito exitosamente")
         
         else: 
@@ -509,8 +603,6 @@ class Inscripciones:
         """La función cancelar_botton limpia todos los campos de la venta para
             poder ingresar nueva información"""
             
-        # limpiar el campo de No_Inscripción
-        self.num_Inscripcion.delete(0,tk.END)
 
         #limpiar el campo de fecha
         self.fecha.delete(0,tk.END)
@@ -566,8 +658,263 @@ class Inscripciones:
                 msg.showinfo("Eliminar", "Eliminación exitosa")
                 self.cargar_tV(inscrito=True)
         else:
-            msg.showerror("Error", "¡El curso no se encuentra inscrito!")
+            msg.showerror("Error", "El estudiante no esta inscrito en el curso")
+    
+    def editar_botton(self):
+        
+        # obtener la fila seleccionada del tree view
+        current_item_id = self.tView.focus()
+        print(current_item_id)
+        current_item = self.tView.item(current_item_id)
+        if current_item["text"] == "":
+            msg.showerror("Error", "Por favor seleccione una fila")
+            return
+        if current_item["values"][2].lower() == "no inscrito":
+            msg.showerror("Error", "El estudiante no esta inscrito en el curso")
+            return
+        
+        fecha_inscripcion = self.fecha.get()
+        codigo_curso = current_item["text"]
+        #no_Inscripcion = self.num_Inscripcion.get()
+        jornada=current_item["values"][-1]
+        descripc_curso = current_item["values"][0]
+        no_Inscripcion = self.num_Inscripcion.get()
+        
+        if self.verificacion_fecha():
             
+            #almacernar modificaciones
+            mod=self.ventana_edicion(codigo_curso,descripc_curso,no_Inscripcion,jornada)
+            
+            if len(mod)==1:
+                self. run_query(f"""UPDATE Inscritos SET Fecha_Inscripción = '{fecha_inscripcion}', Jornada = '{mod[0]}' 
+                                WHERE Código_Curso = '{codigo_curso}' and No_Inscripción = '{no_Inscripcion}'""")
+                
+                current_item["values"][3] = mod[0]
+                self.tView.item(item=current_item_id, values=current_item["values"])
+                
+            elif len(mod)==2:
+                self.run_query(f"""UPDATE Inscritos SET Código_Curso = '{mod[0]}', Fecha_Inscripción = '{fecha_inscripcion}', Jornada = '{mod[1]}'
+                               WHERE Código_Curso = '{codigo_curso}' and No_Inscripción = '{no_Inscripcion}'"""
+                )
+                current_item["values"][-1] = "..."
+                current_item["values"][-2] = "No Inscrito"
+                self.tView.item(item=current_item_id, values=current_item["values"])
+                
+                #Para cambiar el estado de inscripción y jornada del treeview
+                for item in self.tView.get_children():
+                    
+                    #identificar que fila es la del curso modificado
+                    if self.tView.item(item)["text"] == mod[0]:
+                        
+                        #cambiar el estado de inscripción y jornada
+                        current_item = self.tView.item(item)
+                        current_item["values"][-2] = "Inscrito"
+                        current_item["values"][-1] = mod[1]
+                        self.tView.item(item=item, values=current_item["values"])
+
+        msg.showinfo("Info", "Curso editado exitosamente")
+    
+    
+    #La manera correcta de hacer las ventanas emergentes son creando una nueva clase, pero por el momento lo dejamos asi
+    #ya que, en los requerimientos no dice nada :b (en futuro se puede arreglar pero implica hacer más funciones e
+    # implementar callbacks en la nueva clase)
+    
+    def ventana_edicion(self,id_Curso_Seleccionado,curso_Seleccionado,no_Inscripcion_Seleccionado,jornada_Seleccionada):
+        
+        """La función ventana_edicion se encarga de crear una nueva ventana emergente
+            para poder editar la inscripción seleccionada. Se le da la posibilidad de
+            modificar la jornada del curso o el mismo curso"""
+        
+        #variable para dejar continuar la función si se oprime algun boton
+        interruptor=tk.BooleanVar(value=False)
+        
+        resultado=tk.StringVar()
+        winEmergente= tk.Toplevel()
+        winEmergente.resizable(0,0)
+        geometry=self.centrar_ventana(620,200,winEmergente)
+        winEmergente.geometry(f"{geometry}")
+        winEmergente.title("Edición de inscripción")
+        winEmergente.iconphoto(False, tk.PhotoImage(file=self.ruta_imagen))
+        
+        #==========================================================================
+        #Frame para el cambio de jornada de un curso
+        
+        frm = tk.Frame(winEmergente, name="frm")
+        frm.configure(background="#f7f9fd", height=75, width=620)
+        
+        #para evitar que no se pueda usar otra ventana mientras winEmergente este abierto
+        winEmergente.grab_set()
+        winEmergente.focus_set()
+        
+        lblCambioJornada = ttk.Label(frm, name="lblcambiorjornada")
+        lblCambioJornada.configure(background="#f7f9fd",state="normal",text='Cambio de jornada del curso seleccionado:')
+        lblCambioJornada.place(anchor="w", x=20, y=20)
+        
+        
+        lblIdCurso = ttk.Label(frm, name="lblidcurso")
+        lblIdCurso.configure(background="#f7f9fd",state="normal",text='Id Curso:')
+        lblIdCurso.place(anchor="w", x=20, y=50)
+        
+        id_Curso = ttk.Entry(frm, name="id_curso")
+        id_Curso.configure(justify="left", width=166)
+        id_Curso.insert(0,id_Curso_Seleccionado)
+        id_Curso.configure(state="readonly")
+        id_Curso.place(anchor="w", width=90, x=80, y=50)
+        
+        lblDscCurso = ttk.Label(frm, name="lbldsccurso")
+        lblDscCurso.configure(background="#f7f9fd",state="normal",text='Curso:')
+        lblDscCurso.place(anchor="w", x=190, y=50)
+        
+        descripc_Curso = ttk.Entry(frm, name="descripc_curso")
+        descripc_Curso.configure(justify="left", width=166)
+        descripc_Curso.insert(0,curso_Seleccionado)
+        descripc_Curso.configure(state="readonly")
+        descripc_Curso.place(anchor="w", width=200, x=240, y=50)
+        
+        lblJornada = ttk.Label(frm, name="lbljornada")
+        lblJornada.configure(background="#f7f9fd",state="normal",text='Jornada:')
+        lblJornada.place(anchor="w", x=460, y=50)
+        
+        jornadas=["Diurna","Nocturna","Mixta"]
+        jornadas.remove(jornada_Seleccionada)
+        
+        new_Jornada=tk.StringVar()
+        cmbx_Jornada = ttk.Combobox(frm, name="cmbx_jornada",state="readonly",
+                                    values=jornadas,textvariable=new_Jornada)
+        cmbx_Jornada.place(anchor="w",width=80, x=515, y=50)
+        
+        separator1 = ttk.Separator(frm)
+        separator1.configure(orient="horizontal")
+        separator1.place(anchor="sw", width=612, x=4, y=74)
+        
+        
+        #============================================================================
+        #Frame para cambio de curso
+        
+        frm_2 = tk.Frame(winEmergente, name="frm_2")
+        frm_2.configure(background="#A9A9A9", height=75, width=620)
+        
+        cursos=self.run_query(f"""SELECT Cursos.Código_Curso, Cursos.Descripción 
+                              FROM Cursos LEFT JOIN Inscritos
+                              ON Cursos.Código_Curso = Inscritos.Código_Curso and Inscritos.No_Inscripción = '{no_Inscripcion_Seleccionado}'
+                              WHERE Inscritos.Código_Curso IS NULL ORDER BY Cursos.Código_Curso""")
+        
+        id_Cursos=[curso[0] for curso in cursos]
+        descrip_Cursos=[curso[1] for curso in cursos]
+            
+        #Checkbox para confirmar la edición (esta en un lamda porque hacer un afuncion dentro de una
+        # fución esta un poco xd)
+        
+        checkbox_value = tk.BooleanVar()
+        checkbox = ttk.Checkbutton(frm_2, name="checkbox",text="Cambiar de curso inscrito.",
+                                   variable=checkbox_value,
+                                   command=lambda: (cmbx_Descrip_Curso.configure(state="readonly"),
+                                                    cmbx_Jornada.configure(state="disabled"),
+                                                    cmbx_Jornada_New.configure(state="readonly"),
+                                                    cmbx_Id_Curso.configure(state="readonly"),
+                                                    frm_2.configure(background="#f7f9fd"),
+                                                    lblCambioJornada.configure(background="#A9A9A9"),
+                                                    lblDscCurso.configure(background="#A9A9A9"),
+                                                    lblIdCurso.configure(background="#A9A9A9"),
+                                                    lblDscCursoNew.configure(background="#f7f9fd"),
+                                                    lblIdCursoNew.configure(background="#f7f9fd"),
+                                                    lblJornadaNew.configure(background="#f7f9fd"),
+                                                    frm.configure(background="#A9A9A9")
+                                                    )if checkbox_value.get() else 
+                                                    (cmbx_Descrip_Curso.configure(state="disabled"),
+                                                    cmbx_Jornada.configure(state="readonly"),
+                                                    cmbx_Jornada_New.configure(state="disabled"),
+                                                    cmbx_Id_Curso.configure(state="disabled"),
+                                                    frm_2.configure(background="#A9A9A9"),
+                                                    lblCambioJornada.configure(background="#f7f9fd"),
+                                                    lblDscCurso.configure(background="#f7f9fd"),
+                                                    lblIdCurso.configure(background="#f7f9fd"),
+                                                    lblDscCursoNew.configure(background="#A9A9A9"),
+                                                    lblIdCursoNew.configure(background="#A9A9A9"),
+                                                    lblJornadaNew.configure(background="#A9A9A9"),
+                                                    frm.configure(background="#f7f9fd")
+                                                    ))
+        checkbox.place(anchor="w", x=20, y=20)
+        
+        lblIdCursoNew = ttk.Label(frm_2, name="lblidcurso")
+        lblIdCursoNew.configure(background="#A9A9A9",state="normal",text='Id Curso:')
+        lblIdCursoNew.place(anchor="w", x=20, y=50)
+        
+        id_Curso_Select = tk.StringVar()
+        cmbx_Id_Curso = ttk.Combobox(frm_2, name="id_curso")
+        cmbx_Id_Curso.configure(justify="left", width=166,values=id_Cursos,state="disabled",textvariable=id_Curso_Select)
+        cmbx_Id_Curso.place(anchor="w", width=90, x=80, y=50)
+        cmbx_Id_Curso.bind("<<ComboboxSelected>>", lambda event: (descripc_Curso_Select.set(descrip_Cursos[id_Cursos.index(cmbx_Id_Curso.get())])))
+        
+        lblDscCursoNew = ttk.Label(frm_2, name="lbldsccurso")
+        lblDscCursoNew.configure(background="#A9A9A9",state="normal",text='Curso:')
+        lblDscCursoNew.place(anchor="w", x=190, y=50)
+        
+        descripc_Curso_Select = tk.StringVar()
+        cmbx_Descrip_Curso = ttk.Combobox(frm_2, name="descripc_curso")
+        cmbx_Descrip_Curso.configure(justify="left", width=166,values=descrip_Cursos,state="disabled",textvariable=descripc_Curso_Select)
+        cmbx_Descrip_Curso.place(anchor="w", width=200, x=240, y=50)
+        cmbx_Descrip_Curso.bind("<<ComboboxSelected>>", lambda event: (id_Curso_Select.set(id_Cursos[descrip_Cursos.index(cmbx_Descrip_Curso.get())])))
+        
+        lblJornadaNew = ttk.Label(frm_2, name="lbljornada")
+        lblJornadaNew.configure(background="#A9A9A9",state="normal",text='Jornada:')
+        lblJornadaNew.place(anchor="w", x=460, y=50)
+        
+        jornadas.append(jornada_Seleccionada)
+        new_Jornada_New=tk.StringVar()
+        cmbx_Jornada_New = ttk.Combobox(frm_2, name="cmbx_jornada",state="readonly",
+                                        values=jornadas,textvariable=new_Jornada_New)
+        cmbx_Jornada_New.place(anchor="w",width=80, x=515, y=50)
+        cmbx_Jornada_New.configure(state="disabled")
+        
+        #para cuando se cierra la ventana emergente se activa el interruptor
+        #winEmergente.protocol("WM_DELETE_WINDOW", lambda: (interruptor.set(True),
+                                                           #resultado.set("cerrar")))
+        
+        #============================================================================
+        #Frame para botones
+                                
+        frm_3 = tk.Frame(winEmergente, name="frm_3")
+        frm_3.configure(background="#f7f9fd", height=50, width=620)
+        
+        separator2 = ttk.Separator(frm_3)
+        separator2.configure(orient="horizontal")
+        separator2.place(anchor="nw", width=612, x=4, y=1)
+        
+        btnConfirmar=ttk.Button(frm_3, name="btnconfirmar")
+        btnConfirmar.configure(text="Confirmar",command=lambda: (interruptor.set(True) if 
+                                                                id_Curso_Select.get()!="" and new_Jornada_New.get()!="" else 
+                                                                msg.showerror("Error","Por favor llene todos los campos"))
+                                                                if checkbox_value.get() 
+                                                                else ((interruptor.set(True) if 
+                                                                new_Jornada.get()!="" else 
+                                                                msg.showerror("Error","Por favor llene todos los campos"))))
+        btnConfirmar.place(anchor="center",width=90 , x=210, y=25)
+        
+        btnCancelar=ttk.Button(frm_3, name="btncancelar")
+        btnCancelar.configure(text="Cancelar", command=lambda: (interruptor.set(True),resultado.set("cerrar")))
+        btnCancelar.place(anchor="center",width=90 , x=410, y=25)
+
+        
+        frm.pack()
+        frm_2.pack()
+        frm_3.pack()
+        
+        #Espera a que el interruptor se active para qeu continue la ejecucion
+        winEmergente.wait_variable(interruptor)
+        
+        if resultado.get()!="cerrar":
+            
+            if checkbox_value.get():        
+                winEmergente.destroy()
+                return [id_Curso_Select.get(),new_Jornada_New.get()]
+            
+            else:
+                winEmergente.destroy()
+                return [new_Jornada.get()]
+        else: 
+            winEmergente.destroy()
+            return
     def opciones(self, opcion):
         
         """La función opciones se encarga de establecer el comportamiento 
@@ -579,7 +926,7 @@ class Inscripciones:
             if opcion=="G":
                 self.guardar_botton()
             elif opcion=="E":
-                pass
+                self.editar_botton()
             elif opcion=="D":
                 self.delete_botton()
             elif opcion=="C":
@@ -589,88 +936,8 @@ class Inscripciones:
         else:
             msg.showerror(title="¡Atención!",message="¡Ingrese un Alumno!")
 
-    def eleccion_jornada(self,id_Curso,curso):
-        
-        """La función eleccion_jornada se encarga de generar una ventana
-            emergente para la elección de la jornada del curso a inscribir"""
-        
-        #variablke para dejar continuar la función si se oprime algun boton
-        interruptor=tk.BooleanVar(value=False)
-        resultado=tk.StringVar()
-        winEmergente= tk.Toplevel()
-        winEmergente.resizable(0,0)
-        geometry=self.centrar_ventana(300,160,winEmergente)
-        winEmergente.geometry(f"{geometry}")
-        winEmergente.title("Inscripcción de curso")
-        winEmergente.iconphoto(False, tk.PhotoImage(file=self.ruta_imagen))
-        
-        #para evitar que se pueda usar otra ventana mientras winEmergente este abierto
-        winEmergente.grab_set()
-        winEmergente.focus_set()
-
-        #para cuando se cierra la ventana emergente se activa el interruptor
-        winEmergente.protocol("WM_DELETE_WINDOW", lambda: (interruptor.set(True),
-                                                           resultado.set("")))
-        
-        frm = tk.Frame(winEmergente, name="frm_1")
-        frm.configure(background="#f7f9fd", height=160, width=300)
-        
-        lblInfo=ttk.Label(frm, name="lblinfo")
-        lblInfo.configure(background="#f7f9fd",state="normal",
-                          text="Ha seleccionado el siguiente curso para inscribir:"
-                          )
-        lblInfo.place(anchor="center", x=150, y=15)
-        
-        
-        lblCurso= ttk.Label(frm, name="lblcurso")
-        lblCurso.configure(background="#90EE90",state="normal",text=f"ID: {id_Curso}  | Curso: {curso}")
-        lblCurso.place(anchor="center", x=150, y=45)
-        
-        lblJornada = ttk.Label(frm, name="lbljornada")
-        lblJornada.configure(background="#f7f9fd",state="normal",
-                          text=f"Seleccione la jornada en la que desea ver el curso:"
-                          )
-        lblJornada.place(anchor="center", x=150, y=75)
-        
-        jornada=tk.StringVar()
-        cmbx_Jornada = ttk.Combobox(frm, name="cmbx_jornada",state="readonly",values=["Diurna","Nocturna","Mixta"],textvariable=jornada)
-        cmbx_Jornada.place(anchor="center", x=150, y=105)
-        
-        btnConfirmar=ttk.Button(frm, name="btnconfirmar")
-        btnConfirmar.configure(text="Confirmar",command=lambda: (interruptor.set(True),resultado.set(jornada.get())))
-        btnConfirmar.place(anchor="nw",width=90 , x=50, y=130)
-        
-        btnCancelar=ttk.Button(frm, name="btncancelar")
-        btnCancelar.configure(text="Cancelar", command=lambda: (interruptor.set(True),resultado.set("")))
-        btnCancelar.place(anchor="nw",width=90 , x=160, y=130)
-        frm.pack()
-        
-        
-        winEmergente.wait_variable(interruptor)
-        
-        winEmergente.destroy()
-        return resultado.get()
-        
-    #Metodo para centrar la ventana
-    def centrar_ventana(self,wwin,hwin,win):
-        
-        """La función centrar_ventana centra la ventana en la pantalla del usuario"""
-        
-        px = round(win.winfo_screenwidth()/2-wwin/2)
-        py = round(win.winfo_screenheight()/2-hwin/2)
-        return str(wwin)+"x"+str(hwin)+"+"+str(px)+"+"+str(py)
-
-    def fecha_Hoy(self):
-        
-        fecha=f"{date.today().day}/{date.today().month}/{date.today().year}"
-        self.fecha.delete(0,tk.END)
-        if date.today().day<10 and date.today().month<10:
-            fecha=f"0{date.today().day}/0{date.today().month}/{date.today().year}"
-        elif date.today().month<10:
-            fecha=f"{date.today().day}/0{date.today().month}/{date.today().year}"
-        else:
-            fecha=f"0{date.today().day}/{date.today().month}/{date.today().year}"
-        self.fecha.insert(0,fecha)
+    
+    
     
 if __name__ == "__main__":
     app = Inscripciones()

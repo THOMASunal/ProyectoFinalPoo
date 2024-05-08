@@ -712,7 +712,10 @@ class Inscripciones:
                         current_item["values"][-1] = mod[1]
                         self.tView.item(item=item, values=current_item["values"])
 
-        msg.showinfo("Info", "Curso editado exitosamente")
+            msg.showinfo("Info", "Curso editado exitosamente")
+        else: 
+
+            msg.showerror(title="¡Atención!",message="¡Fecha no valida!")
     
     
     #La manera correcta de hacer las ventanas emergentes son creando una nueva clase, pero por el momento lo dejamos asi

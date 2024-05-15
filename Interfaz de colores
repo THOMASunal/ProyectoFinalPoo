@@ -172,45 +172,64 @@ class Inscripciones:
         """ Botones  de la Aplicación"""
 
         # Estilo de los botones
-        self.Buttonstyle = ttk.Style()
-        self.Buttonstyle.theme_use("alt")
-        self.Buttonstyle.configure(
-            "TButton",
-            background="#3B3A4A",
-            foreground="orange",
+        self.button_style = ttk.Style()
+        self.button_style.theme_use("alt")
+        self.button_style.theme_settings(
+            "alt",
+            {
+                "TButton": {
+                    "map": {
+                        "background": [("active", "#4A4A55"), ("disabled", "#5A5A64")],
+                        "foreground": [("active", "orange"), ("disabled", "#111111")],
+                    }
+                }
+            },
+        ) # cambia el fondo y color de los botones dependiendo de si su estado esta "normal" o "disabled"
+        self.button_style.configure(
+            "TButton", background="#3B3A4A", foreground="orange"
         )
 
         # Boton Consultar
-        self.btnConsultar = ttk.Button(self.frm_1, name="btnconsultar")
         # al presionar el boton, se debe confirmar que se halla ingresado un alumno para desplegar los cursos
+        self.btnConsultar = ttk.Button(self.frm_1, name="btnconsultar")
         self.btnConsultar.configure(
-            text="Consultar", command=lambda: self.opciones("S")
+            text="Consultar", command=lambda: self.opciones("S"), state="disabled"
         )
         self.btnConsultar.place(anchor="nw", width=100, x=670, y=180)
 
         # Botón Guardar
         self.btnGuardar = ttk.Button(self.frm_1, name="btnguardar")
-        self.btnGuardar.configure(text="Guardar", command=lambda: self.opciones("G"))
+        self.btnGuardar.configure(
+            text="Guardar", command=lambda: self.opciones("G"), state="disabled"
+        )
         self.btnGuardar.place(anchor="nw", x=200, y=240)
 
         # Botón Editar
         self.btnEditar = ttk.Button(self.frm_1, name="btneditar")
-        self.btnEditar.configure(text="Editar", command=lambda: self.opciones("E"))
+        self.btnEditar.configure(
+            text="Editar", command=lambda: self.opciones("E"), state="disabled"
+        )
         self.btnEditar.place(anchor="nw", x=300, y=240)
 
         # Botón Eliminar
         self.btnEliminar = ttk.Button(self.frm_1, name="btneliminar")
-        self.btnEliminar.configure(text="Eliminar", command=lambda: self.opciones("D"))
+        self.btnEliminar.configure(
+            text="Eliminar", command=lambda: self.opciones("D"), state="disabled"
+        )
         self.btnEliminar.place(anchor="nw", x=400, y=240)
 
         # Botón Cancelar
         self.btnCancelar = ttk.Button(self.frm_1, name="btncancelar")
-        self.btnCancelar.configure(text="Cancelar", command=lambda: self.opciones("C"))
+        self.btnCancelar.configure(
+            text="Cancelar", command=lambda: self.opciones("C"), state="disabled"
+        )
         self.btnCancelar.place(anchor="nw", x=500, y=240)
 
         # Botón Fecha de hoy
         self.btnFechaHoy = ttk.Button(self.frm_1, name="btnfechahoy")
-        self.btnFechaHoy.configure(text="+", padding=(0, -5), command=self.fecha_Hoy)
+        self.btnFechaHoy.configure(
+            text="+", padding=(0, -5), command=self.fecha_Hoy, style="allowed.TButton"
+        )
         self.btnFechaHoy.place(anchor="nw", width=20, height=20, x=775, y=81)
 
         # Separadores
@@ -525,12 +544,25 @@ class Inscripciones:
         inscripciones = self.run_query(query)
 
         if len(inscripciones) == 0:
+            # configura los botones al cual el estudiante tiene acceso
+            self.btnEliminar.configure(state="disabled", cursor="")  # no tiene acceso
+            self.btnEditar.configure(state="disabled", cursor="")  # no tiene acceso
+            self.btnConsultar.configure(state="disabled", cursor="")  # no tiene acceso
+            self.btnGuardar.configure(state="normal", cursor="hand2")  # tiene acceso
+            self.btnCancelar.configure(state="normal", cursor="hand2")  # tiene acceso
+
             no_Exis = self.run_query(
                 "SELECT Valor FROM Variables_Numericas WHERE Nombre = 'No_Inscripciones'"
             )
-            self.num_Inscripcion.set(no_Exis[0][0] + 1)
-
+            self.num_Inscripcion.set(f"¿{no_Exis[0][0] + 1}?")
         else:
+            # configura los botones al cual el estudiante tiene acceso
+            self.btnEliminar.configure(state="normal", cursor="hand2")  # tiene acceso
+            self.btnEditar.configure(state="normal", cursor="hand2")  # tiene acceso
+            self.btnConsultar.configure(state="normal", cursor="hand2")  # tiene acceso
+            self.btnGuardar.configure(state="normal", cursor="hand2")  # tiene acceso
+            self.btnCancelar.configure(state="normal", cursor="hand2")  # tiene acceso
+
             self.num_Inscripcion.set(inscripciones[0][0])
 
     # Alimenta el combobox de No. de inscripciones
@@ -548,6 +580,13 @@ class Inscripciones:
     def info_Alum_For_Inscrp(self, event):
         """La función info_Alum_For_Inscrp identifica el No. de inscripción seleccionado
         para mostrar la informacion de ese estudiante"""
+
+        # habilita los botones
+        self.btnEliminar.configure(state="normal", cursor="hand2")
+        self.btnEditar.configure(state="normal", cursor="hand2")
+        self.btnConsultar.configure(state="normal", cursor="hand2")
+        self.btnGuardar.configure(state="normal", cursor="hand2")
+        self.btnCancelar.configure(state="normal", cursor="hand2")
 
         query = f"SELECT DISTINCT Id_Alumno FROM Inscritos WHERE No_Inscripcion='{self.num_Inscripcion.get()}'"
         datos = self.run_query(query)
@@ -685,7 +724,7 @@ class Inscripciones:
         id_alumno = self.cmbx_Id_Alumno.get()
         fecha_inscripcion = self.fecha.get()
         codigo_curso = current_item["text"]
-        no_Inscripcion = self.num_Inscripcion.get()
+        no_Inscripcion = self.num_Inscripcion.get().replace("¿", "").replace("?", "")
 
         # verifica si la fecha a ingresar en la db es valida
         if self.verificacion_fecha():
@@ -712,6 +751,7 @@ class Inscripciones:
                     self.run_query(
                         f"UPDATE Variables_Numericas SET Valor = {no_Inscripcion} WHERE Nombre = 'No_Inscripciones'"
                     )
+                    self.num_Inscripcion.set(no_Inscripcion)
 
                 msg.showinfo("Info", "Alumno inscrito exitosamente")
 
@@ -740,6 +780,13 @@ class Inscripciones:
 
         # limpiar el tree view
         self.tView.delete(*self.tView.get_children())
+
+        # desabilitar botones
+        self.btnGuardar.configure(state="disabled", cursor="")
+        self.btnCancelar.configure(state="disabled", cursor="")
+        self.btnEliminar.configure(state="disabled", cursor="")
+        self.btnEditar.configure(state="disabled", cursor="")
+        self.btnConsultar.configure(state="disabled", cursor="")
 
     def delete_botton(self):
         """La función delete_botton elimina la inscripción seleccionada en el tree view.

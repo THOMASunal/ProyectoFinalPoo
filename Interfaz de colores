@@ -411,10 +411,18 @@ class Inscripciones:
         # Organizar por estado de inscripción
         if inscrito:
 
+            busqueda = ""
+            if self.id_Curso.get() != "" and self.descripc_Curso.get() != "":
+                busqueda = f" AND Cursos.Codigo_Curso LIKE '%{self.id_Curso.get()}%' AND Descripcion LIKE  '%{self.descripc_Curso.get()}%' "
+            elif self.id_Curso.get() != "":
+                busqueda = f" AND Cursos.Codigo_Curso LIKE '%{self.id_Curso.get()}%' "
+            elif self.descripc_Curso.get() != "":
+                busqueda = f" AND Descripcion LIKE '%{self.descripc_Curso.get()}%' "
+
             # Buscar las coincidencias entre la tabla de cursos y la de inscritos con base a un alumno
             query = f""" SELECT Cursos.*, Inscritos.Jornada FROM Cursos INNER JOIN Inscritos 
                     ON Inscritos.Codigo_Curso = Cursos.Codigo_Curso 
-                    WHERE No_Inscripcion = '{self.num_Inscripcion.get()}' ORDER BY {orden}"""
+                    WHERE No_Inscripcion = '{self.num_Inscripcion.get()}' {busqueda} ORDER BY {orden}"""
 
             cursos = self.run_query(query)
 
@@ -435,7 +443,7 @@ class Inscripciones:
             # Busca todos los cursos qeu no aparezcan en la tabla de inscritos para el alumno seleccionado
             query = f"""SELECT Cursos.* FROM Cursos LEFT JOIN Inscritos 
                     ON Cursos.Codigo_Curso = Inscritos.Codigo_Curso and Inscritos.No_Inscripcion = '{self.num_Inscripcion.get()}' 
-                    WHERE Inscritos.Codigo_Curso IS NULL ORDER BY {orden}"""
+                    WHERE Inscritos.Codigo_Curso IS NULL {busqueda} ORDER BY {orden}"""
 
             cursos = self.run_query(query)
 

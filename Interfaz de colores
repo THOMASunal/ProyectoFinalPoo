@@ -450,7 +450,9 @@ class Inscripciones:
         else:
             query = "SELECT * FROM Cursos"
 
-            if self.id_Curso.get() != "":
+            if self.id_Curso.get() != "" and self.descripc_Curso.get() != "":
+                query += f" WHERE Codigo_Curso LIKE '%{self.id_Curso.get()}%' AND Descripcion LIKE '%{self.descripc_Curso.get()}%' "
+            elif self.id_Curso.get() != "":
                 query += f" WHERE Codigo_Curso LIKE '%{self.id_Curso.get()}%' "
             elif self.descripc_Curso.get() != "":
                 query += f" WHERE Descripcion LIKE '%{self.descripc_Curso.get()}%' "

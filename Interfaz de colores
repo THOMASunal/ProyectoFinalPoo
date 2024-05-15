@@ -401,7 +401,7 @@ class Inscripciones:
         self.apellidos.config(state="readonly")
 
     # Cargar datos en el treeView
-    def cargar_tV(self, orden="Código_Curso", inscrito=False):
+    def cargar_tV(self, orden="Codigo_Curso", inscrito=False):
         """La función cargar_tV sirve para cargar en el treeView los datos de los
         cursos encontrados en la base de datos"""
 
@@ -413,8 +413,8 @@ class Inscripciones:
 
             # Buscar las coincidencias entre la tabla de cursos y la de inscritos con base a un alumno
             query = f""" SELECT Cursos.*, Inscritos.Jornada FROM Cursos INNER JOIN Inscritos 
-                    ON Inscritos.Código_Curso = Cursos.Código_Curso 
-                    WHERE No_Inscripción = '{self.num_Inscripcion.get()}' ORDER BY {orden}"""
+                    ON Inscritos.Codigo_Curso = Cursos.Codigo_Curso 
+                    WHERE No_Inscripcion = '{self.num_Inscripcion.get()}' ORDER BY {orden}"""
 
             cursos = self.run_query(query)
 
@@ -434,8 +434,8 @@ class Inscripciones:
 
             # Busca todos los cursos qeu no aparezcan en la tabla de inscritos para el alumno seleccionado
             query = f"""SELECT Cursos.* FROM Cursos LEFT JOIN Inscritos 
-                    ON Cursos.Código_Curso = Inscritos.Código_Curso and Inscritos.No_Inscripción = '{self.num_Inscripcion.get()}' 
-                    WHERE Inscritos.Código_Curso IS NULL ORDER BY {orden}"""
+                    ON Cursos.Codigo_Curso = Inscritos.Codigo_Curso and Inscritos.No_Inscripcion = '{self.num_Inscripcion.get()}' 
+                    WHERE Inscritos.Codigo_Curso IS NULL ORDER BY {orden}"""
 
             cursos = self.run_query(query)
 
@@ -451,9 +451,9 @@ class Inscripciones:
             query = "SELECT * FROM Cursos"
 
             if self.id_Curso.get() != "":
-                query += f" WHERE Código_Curso LIKE '%{self.id_Curso.get()}%' "
+                query += f" WHERE Codigo_Curso LIKE '%{self.id_Curso.get()}%' "
             elif self.descripc_Curso.get() != "":
-                query += f" WHERE Descripción LIKE '%{self.descripc_Curso.get()}%' "
+                query += f" WHERE Descripcion LIKE '%{self.descripc_Curso.get()}%' "
 
             query += f" ORDER BY {orden}"
             cursos = self.run_query(query)
@@ -463,7 +463,7 @@ class Inscripciones:
                 estado = "No Inscrito"
                 jornada = "..."
                 datos = self.run_query(
-                    f"SELECT Código_Curso FROM Inscritos WHERE Id_Alumno='{self.id_Alum_Select.get()}'"
+                    f"SELECT Codigo_Curso FROM Inscritos WHERE Id_Alumno='{self.id_Alum_Select.get()}'"
                 )
 
                 #  Para saber el estado del curso con respecto al estudiante, se debe de conocer
@@ -473,7 +473,7 @@ class Inscripciones:
                         if curso[0] == dato[0]:
                             estado = "Inscrito"
                             jornada = self.run_query(
-                                f"SELECT Jornada FROM Inscritos WHERE Código_Curso='{curso[0]}' and Id_Alumno='{self.id_Alum_Select.get()}'"
+                                f"SELECT Jornada FROM Inscritos WHERE Codigo_Curso='{curso[0]}' and Id_Alumno='{self.id_Alum_Select.get()}'"
                             )[0][0]
 
                 # agregar info al treeview
@@ -497,7 +497,7 @@ class Inscripciones:
             if colum_id == "#0" and position_y == "heading":
                 self.cargar_tV()
             elif colum_id == "#1" and position_y == "heading":
-                self.cargar_tV("Descripción")
+                self.cargar_tV("Descripcion")
             elif colum_id == "#2" and position_y == "heading":
                 self.cargar_tV("Num_Horas")
             elif colum_id == "#3" and position_y == "heading":
@@ -511,7 +511,7 @@ class Inscripciones:
         un No_Inscripción creado para ese estudiante, y si no, se le asigna el siguiente
         al ultimo No_Inscripción creado"""
 
-        query = f"SELECT DISTINCT No_Inscripción FROM Inscritos WHERE Id_Alumno = {self.id_Alum_Select.get()} ORDER BY No_Inscripción DESC"
+        query = f"SELECT DISTINCT No_Inscripcion FROM Inscritos WHERE Id_Alumno = {self.id_Alum_Select.get()} ORDER BY No_Inscripcion DESC"
         inscripciones = self.run_query(query)
 
         if len(inscripciones) == 0:
@@ -529,7 +529,7 @@ class Inscripciones:
         encontrados en la base de datos"""
 
         query = (
-            "SELECT DISTINCT No_Inscripción FROM Inscritos ORDER BY No_Inscripción DESC"
+            "SELECT DISTINCT No_Inscripcion FROM Inscritos ORDER BY No_Inscripcion DESC"
         )
         inscritos = self.run_query(query)
         self.num_Inscripcion["values"] = inscritos
@@ -539,7 +539,7 @@ class Inscripciones:
         """La función info_Alum_For_Inscrp identifica el No. de inscripción seleccionado
         para mostrar la informacion de ese estudiante"""
 
-        query = f"SELECT DISTINCT Id_Alumno FROM Inscritos WHERE No_Inscripción='{self.num_Inscripcion.get()}'"
+        query = f"SELECT DISTINCT Id_Alumno FROM Inscritos WHERE No_Inscripcion='{self.num_Inscripcion.get()}'"
         datos = self.run_query(query)
         self.id_Alum_Select.set(datos[0][0])
         self.info_Alum(event)
@@ -686,14 +686,14 @@ class Inscripciones:
 
                 # añadir la inscripcion a la base de datos
                 self.run_query(
-                    f"INSERT INTO Inscritos (No_Inscripción,Id_Alumno,Fecha_Inscripción,Código_Curso,Jornada) VALUES ('{no_Inscripcion}','{id_alumno}','{fecha_inscripcion}','{codigo_curso}','{jornada}')"
+                    f"INSERT INTO Inscritos (No_Inscripcion,Id_Alumno,Fecha_Inscripcion,Codigo_Curso,Jornada) VALUES ('{no_Inscripcion}','{id_alumno}','{fecha_inscripcion}','{codigo_curso}','{jornada}')"
                 )
 
                 # actualizar el estado de inscripción (visualmente)
                 current_item["values"][2] = "Inscrito"
                 current_item["values"][3] = jornada
                 self.tView.item(item=current_item_id, values=current_item["values"])
-                max_no = self.run_query("SELECT MAX(No_Inscripción) FROM Inscritos")
+                max_no = self.run_query("SELECT MAX(No_Inscripcion) FROM Inscritos")
                 # print(max_no,type(max_no),max_no[0][0],type(max_no[0][0]),no_Inscripcion,type(no_Inscripcion))
 
                 # Saber si es la ultima inscripción
@@ -741,7 +741,7 @@ class Inscripciones:
 
         if current_item["text"] == "":
 
-            query = f"SELECT * FROM Inscritos WHERE No_Inscripción='{self.num_Inscripcion.get()}'"
+            query = f"SELECT * FROM Inscritos WHERE No_Inscripcion='{self.num_Inscripcion.get()}'"
             existencia = self.run_query(query)
 
             if len(existencia) == 0:
@@ -757,7 +757,7 @@ class Inscripciones:
                 texto1 = "Esta por eliminar todos los cursos inscritos por:".center(60)
                 if msg.askokcancel("Eliminar", f"""{texto1}\n\n{texto}"""):
 
-                    query = f"DELETE FROM Inscritos WHERE No_Inscripción='{self.num_Inscripcion.get()}'"
+                    query = f"DELETE FROM Inscritos WHERE No_Inscripcion='{self.num_Inscripcion.get()}'"
                     self.run_query(query)
                     msg.showinfo("Eliminar", "Eliminación exitosa")
                     self.cargar_tV(inscrito=True)
@@ -769,7 +769,7 @@ class Inscripciones:
             ).center(60)
             if msg.askokcancel("Eliminar", f"""{texto1}\n\n{texto}"""):
 
-                query = f"DELETE FROM Inscritos WHERE No_Inscripción='{self.num_Inscripcion.get()}' and Código_Curso='{current_item['text']}'"
+                query = f"DELETE FROM Inscritos WHERE No_Inscripcion='{self.num_Inscripcion.get()}' and Codigo_Curso='{current_item['text']}'"
                 self.run_query(query)
                 msg.showinfo("Eliminar", "Eliminación exitosa")
                 self.cargar_tV(inscrito=True)
@@ -804,8 +804,8 @@ class Inscripciones:
 
             if len(mod) == 1:
                 self.run_query(
-                    f"""UPDATE Inscritos SET Fecha_Inscripción = '{fecha_inscripcion}', Jornada = '{mod[0]}' 
-                                WHERE Código_Curso = '{codigo_curso}' and No_Inscripción = '{no_Inscripcion}'"""
+                    f"""UPDATE Inscritos SET Fecha_Inscripcion = '{fecha_inscripcion}', Jornada = '{mod[0]}' 
+                                WHERE Codigo_Curso = '{codigo_curso}' and No_Inscripcion = '{no_Inscripcion}'"""
                 )
 
                 current_item["values"][3] = mod[0]
@@ -813,8 +813,8 @@ class Inscripciones:
 
             elif len(mod) == 2:
                 self.run_query(
-                    f"""UPDATE Inscritos SET Código_Curso = '{mod[0]}', Fecha_Inscripción = '{fecha_inscripcion}', Jornada = '{mod[1]}'
-                               WHERE Código_Curso = '{codigo_curso}' and No_Inscripción = '{no_Inscripcion}'"""
+                    f"""UPDATE Inscritos SET Codigo_Curso = '{mod[0]}', Fecha_Inscripcion = '{fecha_inscripcion}', Jornada = '{mod[1]}'
+                               WHERE Codigo_Curso = '{codigo_curso}' and No_Inscripcion = '{no_Inscripcion}'"""
                 )
                 current_item["values"][-1] = "..."
                 current_item["values"][-2] = "No Inscrito"
@@ -936,10 +936,10 @@ class Inscripciones:
         frm_2.configure(background="#06141B", height=75, width=620)
 
         cursos = self.run_query(
-            f"""SELECT Cursos.Código_Curso, Cursos.Descripción 
+            f"""SELECT Cursos.Codigo_Curso, Cursos.Descripcion 
                               FROM Cursos LEFT JOIN Inscritos
-                              ON Cursos.Código_Curso = Inscritos.Código_Curso and Inscritos.No_Inscripción = '{no_Inscripcion_Seleccionado}'
-                              WHERE Inscritos.Código_Curso IS NULL ORDER BY Cursos.Código_Curso"""
+                              ON Cursos.Codigo_Curso = Inscritos.Codigo_Curso and Inscritos.No_Inscripcion = '{no_Inscripcion_Seleccionado}'
+                              WHERE Inscritos.Codigo_Curso IS NULL ORDER BY Cursos.Codigo_Curso"""
         )
 
         id_Cursos = [curso[0] for curso in cursos]

@@ -6,7 +6,7 @@ import tkinter.ttk as ttk
 import sqlite3 as sql
 from datetime import datetime
 from datetime import date
-from os import path
+from os import path, name
 
 
 class Inscripciones:
@@ -14,18 +14,26 @@ class Inscripciones:
     def __init__(self, master=None):
         # Ventana principal
         self.ruta_proyecto = __file__.replace(path.basename(__file__), "")
-        self.ruta_imagen = path.abspath(self.ruta_proyecto + "img/icono2.png")
-        ruta_db = path.abspath(self.ruta_proyecto + "db/Inscripciones.db")
+        self.db_name = path.abspath(
+            self.ruta_proyecto + "db/Inscripciones.db"
+        )  # establecer la ruta de la db
 
-        self.db_name = ruta_db  # establecer la ruta de la db
         self.win = tk.Tk(master)
+
+        # Establecer el icono de la ventana segun el sistema operativo
+        if name == "nt":
+            self.ruta_imagen = path.abspath(self.ruta_proyecto + "img/icono2.ico")
+            self.win.iconbitmap(self.ruta_imagen)
+        else:
+            self.ruta_imagen = path.abspath(self.ruta_proyecto + "img/icono2.png")
+            self.win.iconphoto(False, tk.PhotoImage(file=self.ruta_imagen))
+
         self.win.configure(background="#f7f9fd")  # fondo ventana
         geometry = self.centrar_ventana(800, 600, self.win)
         self.win.geometry(f"{geometry}")
 
         self.win.resizable(False, False)
         self.win.title("Inscripciones de Materias y Cursos")
-        # self.win.iconphoto(False, tk.PhotoImage(file=self.ruta_imagen))
 
         # Crea los frames
         self.frm_1 = tk.Frame(self.win, name="frm_1")
@@ -181,10 +189,10 @@ class Inscripciones:
                     "map": {
                         "background": [("active", "#4A4A55"), ("disabled", "#5A5A64")],
                         "foreground": [("active", "orange"), ("disabled", "#111111")],
-                    }
+                    },
                 }
             },
-        ) # cambia el fondo y color de los botones dependiendo de si su estado esta "normal" o "disabled"
+        )  # cambia el fondo y color de los botones dependiendo de si su estado esta "normal" o "disabled"
         self.button_style.configure(
             "TButton", background="#3B3A4A", foreground="orange"
         )
@@ -228,7 +236,10 @@ class Inscripciones:
         # Botón Fecha de hoy
         self.btnFechaHoy = ttk.Button(self.frm_1, name="btnfechahoy")
         self.btnFechaHoy.configure(
-            text="+", padding=(0, -5), command=self.fecha_Hoy, style="allowed.TButton"
+            text="+",
+            padding=(0, -5),
+            command=self.fecha_Hoy,
+            cursor="hand2",
         )
         self.btnFechaHoy.place(anchor="nw", width=20, height=20, x=775, y=81)
 
@@ -690,12 +701,15 @@ class Inscripciones:
                 if jornada.get() != ""
                 else msg.showerror("Error", "Por favor seleccione la jornada")
             ),
+            cursor="hand2",
         )
         btnConfirmar.place(anchor="nw", width=90, x=50, y=130)
 
         btnCancelar = ttk.Button(frm, name="btncancelar")
         btnCancelar.configure(
-            text="Cancelar", command=lambda: (interruptor.set(True), resultado.set(""))
+            text="Cancelar",
+            command=lambda: (interruptor.set(True), resultado.set("")),
+            cursor="hand2",
         )
         btnCancelar.place(anchor="nw", width=90, x=160, y=130)
         frm.pack()
@@ -1154,6 +1168,7 @@ class Inscripciones:
                     )
                 )
             ),
+            cursor="hand2",
         )
         btnConfirmar.place(anchor="center", width=90, x=210, y=25)
 
@@ -1161,6 +1176,7 @@ class Inscripciones:
         btnCancelar.configure(
             text="Cancelar",
             command=lambda: (interruptor.set(True), resultado.set("cerrar")),
+            cursor="hand2",
         )
         btnCancelar.place(anchor="center", width=90, x=410, y=25)
 

@@ -724,7 +724,6 @@ class Inscripciones:
         
         fecha_inscripcion = self.fecha.get()
         codigo_curso = current_item["text"]
-        #no_Inscripcion = self.num_Inscripcion.get()
         jornada=current_item["values"][-1]
         descripc_curso = current_item["values"][0]
         no_Inscripcion = self.num_Inscripcion.get()
@@ -860,8 +859,7 @@ class Inscripciones:
         id_Cursos=[curso[0] for curso in cursos]
         descrip_Cursos=[curso[1] for curso in cursos]
             
-        #Checkbox para confirmar la edición (esta en un lamda porque hacer un afuncion dentro de una
-        # fución esta un poco xd)
+        #Checkbox para confirmar la edición (esta en un lamda)
         
         #Estilo de la checkbox
         checkboxstyle = ttk.Style()
@@ -936,8 +934,8 @@ class Inscripciones:
         cmbx_Jornada_New.configure(state="disabled")
         
         #para cuando se cierra la ventana emergente se activa el interruptor
-        #winEmergente.protocol("WM_DELETE_WINDOW", lambda: (interruptor.set(True),
-                                                           #resultado.set("cerrar")))
+        winEmergente.protocol("WM_DELETE_WINDOW", lambda: (interruptor.set(True),
+                                                           resultado.set("cerrar")))
         
         #============================================================================
         #Frame para botones
